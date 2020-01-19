@@ -1,0 +1,31 @@
+﻿<Properties StartupConfiguration="{E5BB3DBC-9DB2-060D-1AAF-7A90094BF83F}|">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/StateFlux/Client.cs">
+    <Files>
+      <File FileName="Assets/StateFlux/Client.cs" Line="75" Column="1" />
+      <File FileName="Assets/StateFluxClient.cs" Line="31" Column="43" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="StateFluxUnityTest" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="StateFlux" expanded="True">
+                <Node name="Client.cs" selected="True" />
+              </Node>
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="e30e4b83-38f1-4896-aa82-e52870468e14" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="/Users/thomaspatrick/Documents/GitHub/StateFlux/StateFluxUnityTest/Temp/UnityTempFile-f0031eb3b7af142578ef579fc40eedda" relfile="Temp/UnityTempFile-f0031eb3b7af142578ef579fc40eedda" line="86" column="1" />
+      <Breakpoint file="/Users/thomaspatrick/Documents/GitHub/StateFlux/StateFluxUnityTest/Temp/UnityTempFile-f0031eb3b7af142578ef579fc40eedda" relfile="Temp/UnityTempFile-f0031eb3b7af142578ef579fc40eedda" line="352" column="1" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>
