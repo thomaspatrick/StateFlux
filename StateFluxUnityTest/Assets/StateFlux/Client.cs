@@ -14,7 +14,6 @@ namespace StateFlux.Client
 {
     public class Client
     {
-        private const string _url = "ws://localhost:8888/Service";
         private string _sessionFilePath = Application.dataPath + "/" + "currentplayer.json";
 
         private PlayerClientInfo _currentPlayer;
@@ -24,6 +23,7 @@ namespace StateFlux.Client
         private ConcurrentQueue<Message> _requests = new ConcurrentQueue<Message>();
         private ConcurrentQueue<Message> _responses = new ConcurrentQueue<Message>();
 
+        public string Endpoint { get; set; }
         public string RequestedUsername { get; set; }
         public string SessionSaveFilename { get; set; }
 
@@ -109,7 +109,7 @@ namespace StateFlux.Client
             {
                 lock(this)
                 {
-                    _webSocket = new WebSocket(_url);
+                    _webSocket = new WebSocket(Endpoint);
                     _webSocket.OnOpen += (object source, EventArgs e) =>
                     {
                         Log("Websocket.OnOpen");
@@ -269,7 +269,7 @@ namespace StateFlux.Client
                     {
                         return false;
                     }
-                    _webSocket = new WebSocket(_url);
+                    _webSocket = new WebSocket(Endpoint);
                     _webSocket.OnMessage += HandleAuthResponseMessage;
                     _webSocket.Connect();
                 }

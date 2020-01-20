@@ -12,6 +12,7 @@ public class StateFluxClient : MonoBehaviour
     private Color myColor;
 
     public GameObject prefab;
+    public string endpoint;
 
     void Start()
     {
@@ -19,6 +20,7 @@ public class StateFluxClient : MonoBehaviour
         myColor = UnityEngine.Random.ColorHSV();
 
         client = new Client();
+        client.Endpoint = endpoint; // "ws://localhost:8888/Service";
         client.RequestedUsername = "bichon";
         client.SessionSaveFilename = "currentplayer.json";
         client.Start();

@@ -423,3 +423,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   prefab: {fileID: 1088802781260781030, guid: d6f2cac1602594be78971b5f2fb1d47c, type: 3}
+  endpoint: ws://play.pixelkingsoftware.com/Service
