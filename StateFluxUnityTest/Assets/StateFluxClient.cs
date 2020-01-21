@@ -22,7 +22,7 @@ public class StateFluxClient : MonoBehaviour
         client = new Client();
         client.Endpoint = endpoint; // "ws://localhost:8888/Service";
         client.RequestedUsername = "bichon";
-        client.SessionSaveFilename = "currentplayer.json";
+        client.SessionSaveFilename = Application.persistentDataPath + "\\currentplayer.json";
         client.Start();
         StartCoroutine("SendState");
         StartCoroutine("ReceiveMessages");

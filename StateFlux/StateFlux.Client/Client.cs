@@ -9,12 +9,14 @@ using StateFlux.Model;
 using WebSocketSharp;
 using WebSocketSharp.Net;
 
+#if (UNITY_STANDALONE || UNITY_EDITOR)
+using UnityEngine;
+#endif
+
 namespace StateFlux.Client
 {
     public class Client
     {
-        private const string _url = "ws://localhost:8888/Service";
-        private const string CurrentPlayerFilename = "currentplayer.json";
         private PlayerClientInfo _currentPlayer;
         private WebSocket _webSocket;
         private Task _task;
@@ -24,6 +26,7 @@ namespace StateFlux.Client
 
         public string RequestedUsername { get; set; }
         public string SessionSaveFilename { get; set; }
+        public string Endpoint { get; set; }
 
         public WebSocketState ReadyState {
             get {
@@ -43,7 +46,6 @@ namespace StateFlux.Client
                 }
             }
         }
-
 
         public void SendRequest(Message message)
         {
@@ -108,7 +110,7 @@ namespace StateFlux.Client
             {
                 lock(this)
                 {
-                    _webSocket = new WebSocket(_url);
+                    _webSocket = new WebSocket(Endpoint);
                     _webSocket.OnOpen += (object source, EventArgs e) =>
                     {
                         Log("Websocket.OnOpen");
@@ -168,7 +170,6 @@ namespace StateFlux.Client
                     Message message;
                     if (_requests.TryDequeue(out message))
                     {
-                        Log("Pulled a request from the queue, sending it...");
                         _webSocket.Send(JsonConvert.SerializeObject(message));
                     }
                 }
@@ -269,7 +270,7 @@ namespace StateFlux.Client
                     {
                         return false;
                     }
-                    _webSocket = new WebSocket(_url);
+                    _webSocket = new WebSocket(Endpoint);
                     _webSocket.OnMessage += HandleAuthResponseMessage;
                     _webSocket.Connect();
                 }
@@ -308,8 +309,7 @@ namespace StateFlux.Client
             catch (Exception e)
             {
                 Log(e.ToString());
-                File.Delete(CurrentPlayerFilename);
-                _currentPlayer = null;
+                ResetSavedSession();
             }
 
             lock(this)
@@ -350,28 +350,32 @@ namespace StateFlux.Client
 
         private void SaveSession()
         {
-            File.WriteAllText(CurrentPlayerFilename, JsonConvert.SerializeObject(_currentPlayer, Formatting.Indented));
+            File.WriteAllText(SessionSaveFilename, JsonConvert.SerializeObject(_currentPlayer, Formatting.Indented));
         }
 
         private bool HasSavedSession()
         {
-            return File.Exists(CurrentPlayerFilename);
+            return File.Exists(SessionSaveFilename);
         }
 
         private PlayerClientInfo LoadSession()
         {
-            return JsonConvert.DeserializeObject<PlayerClientInfo>(File.ReadAllText(CurrentPlayerFilename));
+            return JsonConvert.DeserializeObject<PlayerClientInfo>(File.ReadAllText(SessionSaveFilename));
         }
 
         private void ResetSavedSession()
         {
-            File.Delete(CurrentPlayerFilename);
+            File.Delete(SessionSaveFilename);
             _currentPlayer = null;
         }
 
         private void Log(string msg)
         {
+#if (UNITY_EDITOR || UNITY_STANDALONE)
+            Debug.Log(msg);
+#else
             Console.WriteLine(msg);
+#endif
         }
     }
 }

@@ -6,16 +6,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using StateFlux.Model;
-using UnityEngine;
 using WebSocketSharp;
 using WebSocketSharp.Net;
+
+#if (UNITY_STANDALONE || UNITY_EDITOR)
+using UnityEngine;
+#endif
 
 namespace StateFlux.Client
 {
     public class Client
     {
-        private string _sessionFilePath = Application.dataPath + "/" + "currentplayer.json";
-
         private PlayerClientInfo _currentPlayer;
         private WebSocket _webSocket;
         private Task _task;
@@ -23,9 +24,9 @@ namespace StateFlux.Client
         private ConcurrentQueue<Message> _requests = new ConcurrentQueue<Message>();
         private ConcurrentQueue<Message> _responses = new ConcurrentQueue<Message>();
 
-        public string Endpoint { get; set; }
         public string RequestedUsername { get; set; }
         public string SessionSaveFilename { get; set; }
+        public string Endpoint { get; set; }
 
         public WebSocketState ReadyState {
             get {
@@ -349,28 +350,32 @@ namespace StateFlux.Client
 
         private void SaveSession()
         {
-            File.WriteAllText(_sessionFilePath, JsonConvert.SerializeObject(_currentPlayer, Formatting.Indented));
+            File.WriteAllText(SessionSaveFilename, JsonConvert.SerializeObject(_currentPlayer, Formatting.Indented));
         }
 
         private bool HasSavedSession()
         {
-            return File.Exists(_sessionFilePath);
+            return File.Exists(SessionSaveFilename);
         }
 
         private PlayerClientInfo LoadSession()
         {
-            return JsonConvert.DeserializeObject<PlayerClientInfo>(File.ReadAllText(_sessionFilePath));
+            return JsonConvert.DeserializeObject<PlayerClientInfo>(File.ReadAllText(SessionSaveFilename));
         }
 
         private void ResetSavedSession()
         {
-            File.Delete(_sessionFilePath);
+            File.Delete(SessionSaveFilename);
             _currentPlayer = null;
         }
 
         private void Log(string msg)
         {
+#if (UNITY_EDITOR || UNITY_STANDALONE)
             Debug.Log(msg);
+#else
+            Console.WriteLine(msg);
+#endif
         }
     }
 }
