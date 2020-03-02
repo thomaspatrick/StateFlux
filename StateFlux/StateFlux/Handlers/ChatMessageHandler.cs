@@ -25,7 +25,7 @@ namespace StateFlux.Service
             chatSaidMessage.PlayerName = said.PlayerName;
             chatSaidMessage.Say = said.Saying;
             _websocket.LogMessage($"{currentPlayer.Name} says '{said.Saying}'");
-            _websocket.Broadcast(chatSaidMessage, currentPlayer.GameInstance, true);
+            _websocket.Broadcast(chatSaidMessage, currentPlayer.GameInstanceRef, true);
         }
 
         public void PlayerList(PlayerListMessage message)
@@ -42,8 +42,7 @@ namespace StateFlux.Service
             Player currentPlayer = _websocket.GetCurrentSessionPlayer();
             Assert.ThrowIfNull(currentPlayer, "requires a user session", _websocket);
             currentPlayer.Name = message.Name.Truncate(50);
-            _server.PlayerDatabase[currentPlayer.SessionId].Name = currentPlayer.Name;
-            _server.SavePlayerDatabase();
+            _server.playerRepository.UpdatePlayer(currentPlayer);
             PlayerListingMessage playerListingMessage = new PlayerListingMessage();
             playerListingMessage.Players = Server.Instance.Players;
             _websocket.Broadcast(playerListingMessage, null, true);

@@ -24,6 +24,7 @@ namespace StateFlux.Client
         private ConcurrentQueue<Message> _requests = new ConcurrentQueue<Message>();
         private ConcurrentQueue<Message> _responses = new ConcurrentQueue<Message>();
 
+        public string UserName { get; set; }
         public string RequestedUsername { get; set; }
         public string SessionSaveFilename { get; set; }
         public string Endpoint { get; set; }
@@ -88,6 +89,7 @@ namespace StateFlux.Client
                     if (HasSavedSession())
                     {
                         _currentPlayer = LoadSession();
+                        UserName = _currentPlayer.Name;
                     }
                     else
                     {
@@ -343,6 +345,7 @@ namespace StateFlux.Client
                 Name = authenticated.PlayerName,
                 SessionId = authenticated.SessionId
             };
+            UserName = _currentPlayer.Name;
 
             SaveSession();
             Log($"Player is authenticated as {_currentPlayer.Name} with sessionId = {_currentPlayer.SessionId}");
@@ -367,6 +370,7 @@ namespace StateFlux.Client
         {
             File.Delete(SessionSaveFilename);
             _currentPlayer = null;
+            UserName = "";
         }
 
         private void Log(string msg)

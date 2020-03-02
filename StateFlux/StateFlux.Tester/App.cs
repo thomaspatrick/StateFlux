@@ -295,7 +295,7 @@ namespace StateFlux.Tester
             foreach (Player player in message.Players)
             {
                 Console.Write($"Player {player.Name}");
-                if(player.GameInstance != null)
+                if(player.GameInstanceRef != null)
                 {
                     Console.WriteLine($" in game instance {JsonConvert.SerializeObject(player)}");
                 }

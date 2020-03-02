@@ -28,11 +28,17 @@ namespace StateFlux.Service
             Player player = _websocket.GetCurrentSessionPlayer();
             if(player == null)
             {
+                if(Server.Instance.Players.Any(p => p.Name == message.PlayerName))
+                {
+                    response.Status = AuthenticationStatus.BadUser;
+                    _websocket.LogMessage($"Player failed authenticate: matching name in DB, but with a different session id");
+                    return response;
+                }
                 player = _websocket.CreatePlayerSession(message.PlayerName.Truncate(MaxPlayerNameLen));
             }
 
             response.PlayerName = player.Name;
-            response.SessionId = player.SessionId;
+            response.SessionId = player.SessionData.SessionId;
             _websocket.LogMessage($"Player authenticated: {JsonConvert.SerializeObject(response)}");
             return response;
         }

@@ -17,7 +17,7 @@ namespace StateFlux.Service
             {
                 Payload = message.Payload
             };
-            _websocket.Broadcast(stateChangedMessage, currentPlayer.GameInstance, true);
+            _websocket.Broadcast(stateChangedMessage, currentPlayer.GameInstanceRef, true);
             return null;
         }
 

@@ -7,6 +7,7 @@ using UnityEngine.EventSystems;
 using TMPro;
 using StateFlux.Model;
 using StateFlux.Client;
+using System.Text;
 
 public class LobbyManager : MonoBehaviour, IStateFluxListener
 {
@@ -32,13 +33,18 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public GameObject login;
     public GameObject lobby;
     public GameObject playerRowPrefab;
+    public GameObject gameRowPrefab;
 
-    private string userName;
     private List<Player> players;
+    private List<GameInstance> games;
+    private List<ChatSaidMessage> said;
     private string lastUsernameSaveFile;
     private GameObject userNameInputField;
     private GameObject userNameInputText;
     private GameObject userNameInputPlaceholder;
+    private GameObject chatInputField;
+    private GameObject chatField;
+    private GameObject chatScrollView;
 
     public string lastUsername
     {
@@ -64,10 +70,23 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         yield return new WaitForEndOfFrame();
         players = new List<Player>();
+        games = new List<GameInstance>();
+        said = new List<ChatSaidMessage>();
         userNameInputField = GameObject.Find("InputField");
         userNameInputText = GameObject.Find("InputField/Text");
         userNameInputPlaceholder = GameObject.Find("InputField/Placeholder");
-        lastUsernameSaveFile = Application.persistentDataPath + "\\lastUsername.txt";
+        lastUsernameSaveFile = Application.persistentDataPath;
+        if(Application.isEditor)
+            lastUsernameSaveFile += "\\lastUsername-editor.txt";
+        else
+        {
+            lastUsernameSaveFile += "\\lastUsername.txt";
+        }
+
+        chatScrollView = GameObject.Find("Chat/Scroll View");
+        chatInputField = GameObject.Find("ChatInputField/Text");
+        chatField = GameObject.Find("Content/Text");
+
 
         StateFluxClient.Instance.AddListener(this);
 
@@ -96,13 +115,14 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         }
     }
 
-    IEnumerator PollPlayerList()
+    IEnumerator PollLists()
     {
         while(true)
         {
             if (StateFluxClient.Instance.connected)
             {
                 StateFluxClient.Instance.SendRequest(new PlayerListMessage());
+                StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
             }
             yield return new WaitForSeconds(10);
         }
@@ -137,6 +157,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         {
             canvasGroup.alpha = show ? 1 : 0;
             canvasGroup.interactable = show;
+            canvasGroup.blocksRaycasts = show;
         }
     }
 
@@ -148,6 +169,15 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         foreach (Transform child in content.transform) GameObject.Destroy(child.gameObject);
     }
 
+    private void ClearGameInstanceListView()
+    {
+        GameObject content = GameObject.Find("Lobby Panel/GamesPanel/Games/Scroll View/Viewport/Content");
+        games.Clear();
+        if (content == null) return;
+        foreach (Transform child in content.transform) GameObject.Destroy(child.gameObject);
+    }
+
+
     // --------------------------------------------------
     // UI message handlers
 
@@ -158,6 +188,16 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         StateFluxClient.Instance.Login();
     }
 
+    public void OnClickToCreateGame()
+    {
+        var message = new CreateGameInstanceMessage
+        {
+            GameName = "AssetCollapse",
+            InstanceName = System.Guid.NewGuid().ToString()
+        };
+        StateFluxClient.Instance.SendRequest(message);
+    }
+
     public void OnClickToLogout()
     {
         Debug.Log($"LobbyManager.OnClickToLogout");
@@ -166,9 +206,14 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         StartCoroutine(ActivateLoginPanel());
     }
 
+    public void OnChatInputSubmit(string value)
+    {
+        StateFluxClient.Instance.SendRequest(new ChatSayMessage { say = value });
+    }
+
+
     public void OnUsernameChanged(string newValue)
     {
-        Debug.Log($"LobbyManager.OnUsernameChanged to {newValue}");
         GameObject.Find("LoginButton").GetComponent<Button>().interactable = !string.IsNullOrEmpty(newValue);
     }
 
@@ -196,13 +241,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         Debug.Log("OnStateFluxConnect!");
         StartCoroutine(ActivateLobbyPanel());
-        StartCoroutine(PollPlayerList());
+        StartCoroutine(PollLists());
     }
 
     public void OnStateFluxDisconnect()
     {
         Debug.Log("OnStateFluxDisconnect!");
-        StopCoroutine(PollPlayerList());
+        StopCoroutine(PollLists());
     }
 
     public void OnStateFluxStateChanged(StateChangedMessage message)
@@ -220,6 +265,54 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             GameObject row = GameObject.Instantiate(playerRowPrefab, content.transform);
             var textMeshPro = row.GetComponentInChildren<TextMeshProUGUI>();
             textMeshPro.text = p.Name;
+
+        }
+    }
+
+    public void OnStateFluxChatSaid(ChatSaidMessage message)
+    {
+        said.Add(message);
+        string userName = StateFluxClient.Instance.userName;
+        var chatText = chatField.GetComponent<TextMeshProUGUI>();
+        StringBuilder builder = new StringBuilder();
+        builder.Append("<color=#339933>");
+        foreach (var msg in said)
+        {
+            if(msg.PlayerName == userName)
+            {
+                builder.Append("<color=#996633>");
+            }
+            builder.AppendLine($"<b>{msg.PlayerName}:</b>  {msg.Say}");
+            if (msg.PlayerName == userName)
+            {
+                builder.Append("</color>");
+            }
+        }
+        builder.Append("</color>");
+        chatText.SetText(builder.ToString());
+        chatScrollView.GetComponent<ScrollRect>().normalizedPosition = new Vector2(0, 0); // scroll to bottom
+    }
+
+    public void OnStateFluxGameInstanceListing(GameInstanceListingMessage message)
+    {
+        ClearGameInstanceListView();
+        GameObject content = GameObject.Find("Lobby Panel/GamesPanel/Games/Scroll View/Viewport/Content");
+        if (content == null) return;
+        foreach (GameInstance g in message.GameInstances)
+        {
+            bool first = true;
+            StringBuilder builder = new StringBuilder();
+            builder.Append($"<b>{g.Name}</b>\nHost: {g?.HostPlayer?.Name}\n Player: ");
+            foreach(Player p in g.Players)
+            {
+                if (!first) builder.Append(",");
+                first = false;
+                builder.Append(p.Name);
+            }
+            games.Add(g);
+            GameObject row = GameObject.Instantiate(gameRowPrefab, content.transform);
+            var textMeshPro = row.GetComponentInChildren<TextMeshProUGUI>();
+            textMeshPro.text = builder.ToString();
 
         }
     }

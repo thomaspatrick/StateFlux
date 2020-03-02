@@ -32,7 +32,7 @@ namespace StateFlux.Service.Handlers
                 throw new Exception(msg);
             }
 
-            var gameInstance = game.StartInstance(currentPlayer, message.InstanceName);
+            var gameInstance = Server.Instance.HostGameInstance(currentPlayer, game, message.InstanceName);
             _websocket.LogMessage($"Player creates game instance of game '{message.GameName}' and calls it '{message.InstanceName}'");
 
             var broadcastMessage = new GameInstanceCreatedMessage()
@@ -69,7 +69,7 @@ namespace StateFlux.Service.Handlers
             Assert.ThrowIfNull(gameInstance, $"game instance {game.Name}:{gameInstance.Name} not found", _websocket);
             if (gameInstance != null)
             {
-                gameInstance.Join(_websocket.GetCurrentSessionPlayer());
+                Server.Instance.JoinGameInstance(gameInstance, _websocket.GetCurrentSessionPlayer());
                 _websocket.LogMessage($"Player joins game instance '{message.GameName}:{message.InstanceName}'");
                 var broadcastMessage = new JoinedGameInstanceMessage() { Player = currentPlayer };
                 _websocket.Broadcast(broadcastMessage, null, true);

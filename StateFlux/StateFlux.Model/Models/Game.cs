@@ -8,23 +8,13 @@ namespace StateFlux.Model
         public string Name { get; set; }
         public string Description { get; set; }
         public int MinPlayers { get; set; }
+        public int MaxPlayers { get; set; }
         [JsonIgnore]
         public List<GameInstance> Instances { get; set; }
-
 
         public Game()
         {
             Instances = new List<GameInstance>();
-        }
-
-        public GameInstance StartInstance(Player hostPlayer, string gameInstanceName)
-        {
-            GameInstance instance = new GameInstance(this,gameInstanceName);
-            Instances.Add(instance);
-            hostPlayer.GameInstance = instance;
-            instance.HostPlayer = hostPlayer;
-            instance.Join(hostPlayer);
-            return instance;
         }
     }
 }

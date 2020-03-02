@@ -53,15 +53,20 @@ namespace StateFlux.Service
         public Player GetCurrentSessionPlayer()
         {
             string sessionCookieValue = GetSessionCookieValue();
-            Player player = Server.Instance.Players.FirstOrDefault(p => p.SessionId == sessionCookieValue);
+            Player player = Server.Instance.Players.FirstOrDefault(p => p.SessionData.SessionId == sessionCookieValue);
             if(player == null)
             {
                 // not an active player - check database?
-                if(sessionCookieValue != null && Server.Instance.PlayerDatabase.ContainsKey(sessionCookieValue))
+                if (sessionCookieValue != null)
                 {
-                    // add player to active list
-                    player = Server.Instance.PlayerDatabase[sessionCookieValue];
-                    Server.Instance.Players.Add(player);
+                    Player found = Server.Instance.playerRepository.GetAllPlayers().FirstOrDefault(p => p.SessionData?.SessionId == sessionCookieValue);
+                    if(found != null)
+                    {
+                        // add player to active list
+                        player = found;
+                        player.GameInstanceRef = null;
+                        Server.Instance.Players.Add(player);
+                    }
                 }
             }
             return player;
@@ -72,11 +77,9 @@ namespace StateFlux.Service
             Player player = new Player
             {
                 Name = playerName,
-                SessionId = Guid.NewGuid().ToString(),
-                WebsocketSessionId = this.ID
+                SessionData = new PlayerSessionData { SessionId = Guid.NewGuid().ToString(), WebsocketSessionId = this.ID },
             };
-            Server.Instance.PlayerDatabase.Add(player.SessionId, player);
-            Server.Instance.SavePlayerDatabase();
+            Server.Instance.playerRepository.InsertPlayer(player);
             Server.Instance.Players.Add(player);
             return player;
         }
@@ -96,7 +99,7 @@ namespace StateFlux.Service
             }
         }
 
-        public void Broadcast(Message message, GameInstance gameInstance, bool meToo)
+        public void Broadcast(Message message, GameInstanceRef gameInstanceRef, bool meToo)
         {
             try
             {
@@ -107,10 +110,10 @@ namespace StateFlux.Service
                 {
                     if (!meToo) continue;
                     GameInstance playerGameInstance = FindPlayerGameInstance(player);
-                    if (gameInstance == null || gameInstance == playerGameInstance)
+                    if (gameInstanceRef == null || gameInstanceRef.Id == playerGameInstance.Id)
                     {
                         IWebSocketSession session;
-                        if (sessionManager.TryGetSession(player.WebsocketSessionId, out session))
+                        if (sessionManager.TryGetSession(player.SessionData.WebsocketSessionId, out session))
                         {
                             session.Context.WebSocket.Send(msg);
                         }
@@ -154,7 +157,7 @@ namespace StateFlux.Service
                 LogMessage($"Connection opened");
                 if (currentPlayer != null)
                 {
-                    currentPlayer.WebsocketSessionId = this.ID;
+                    currentPlayer.SessionData.WebsocketSessionId = this.ID;
                 }
             }
             catch (Exception e)
@@ -178,7 +181,7 @@ namespace StateFlux.Service
             IEnumerable<Player> players = Server.Instance.Players;
             PlayerListingMessage playerListingMessage = new PlayerListingMessage
             {
-                Players = Server.Instance.Players.Where(p => p.SessionId != currentPlayer.SessionId).ToList()
+                Players = Server.Instance.Players.Where(p => p.SessionData.SessionId != currentPlayer.SessionData.SessionId).ToList()
             };
 
             Broadcast(playerListingMessage, null, true);

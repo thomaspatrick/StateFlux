@@ -15,7 +15,7 @@ namespace StateFlux.Service
             Assert.ThrowIfNull(player, "requires a user session", _websocket);
 
             GameInstance gameInstance = _websocket.FindPlayerGameInstance(player);
-            _websocket.Broadcast(new RequestFullStateMessage(), gameInstance, true);
+            _websocket.Broadcast(new RequestFullStateMessage(), new GameInstanceRef(gameInstance), true);
             return null;
         }
     }

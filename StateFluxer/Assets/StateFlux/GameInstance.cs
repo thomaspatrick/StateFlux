@@ -5,10 +5,24 @@ using Newtonsoft.Json;
 
 namespace StateFlux.Model
 {
+    public class GameInstanceRef
+    {
+        public GameInstanceRef(GameInstance that)
+        {
+            Id = that.Id;
+            Name = that.Name;
+            GameName = that.Game.Name;
+        }
+
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string GameName { get; set; }
+    }
+
     public class GameInstance
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
-
         public Game Game { get; set; }
 
         [JsonIgnore]
@@ -22,18 +36,6 @@ namespace StateFlux.Model
             Players = new List<Player>();
             Game = game;
             Name = name;
-        }
-
-        public void Join(Player player)
-        {
-            bool playerAlreadyIn = Players.Any(p => p.SessionId == player.SessionId);
-            if (playerAlreadyIn)
-            {
-                throw new Exception($"Player {player.Name} already in game instance {Game.Name}:{Name}");
-            }
-
-            player.GameInstance = this;
-            Players.Add(player);
         }
     }
 }

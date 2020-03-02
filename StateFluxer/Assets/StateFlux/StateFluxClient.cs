@@ -24,7 +24,6 @@ public class StateFluxClient : MonoBehaviour
     public string userName;
     [HideInInspector]
     public bool connected;
-    [HideInInspector]
     public string endpoint;
     [HideInInspector]
     public bool hasSavedSession;
@@ -42,10 +41,14 @@ public class StateFluxClient : MonoBehaviour
         connected = false;
         isInitialized = false;
         clientId = Guid.NewGuid().ToString();
-        sessionFile = Application.persistentDataPath + "\\currentplayer.json";
+        sessionFile = Application.persistentDataPath;
+        if (Application.isEditor)
+            sessionFile += "\\currentplayer-editor.json";
+        else {
+            sessionFile += "\\currentPlayer.json";
+        }
         hasSavedSession = File.Exists(sessionFile);
         if (string.IsNullOrEmpty(endpoint)) endpoint = "ws://play.pixelkingsoftware.com/Service";
-
     }
     private void Awake()
     {
@@ -153,11 +156,13 @@ public class StateFluxClient : MonoBehaviour
             if(!connected && openWithIdentity)
             {
                 connected = true;
+                userName = client.UserName;
                 foreach (var listener in listeners) listener.OnStateFluxConnect();
             }
             else if(connected && !openWithIdentity)
             {
                 connected = false;
+                userName = "";
                 foreach (var listener in listeners) listener.OnStateFluxDisconnect();
             }
 
@@ -178,6 +183,16 @@ public class StateFluxClient : MonoBehaviour
                     {
                         PlayerListingMessage msg = (PlayerListingMessage)message;
                         foreach (var listener in listeners) listener.OnStateFluxPlayerListing(msg);
+                    }
+                    else if (message.MessageType == MessageTypeNames.GameInstanceListing)
+                    {
+                        GameInstanceListingMessage msg = (GameInstanceListingMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceListing(msg);
+                    }
+                    else if(message.MessageType == MessageTypeNames.ChatSaid)
+                    {
+                        ChatSaidMessage msg = (ChatSaidMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxChatSaid(msg);
                     }
                     else
                     {
