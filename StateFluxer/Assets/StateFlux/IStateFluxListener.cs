@@ -8,6 +8,7 @@ namespace StateFlux.Client
         void OnStateFluxWaitingToConnect();
         void OnStateFluxConnect();
         void OnStateFluxDisconnect();
+        void OnStateFluxServerError(ServerErrorMessage message);
         void OnStateFluxStateChanged(StateChangedMessage message);
         void OnStateFluxPlayerListing(PlayerListingMessage message);
         void OnStateFluxGameInstanceListing(GameInstanceListingMessage message);

@@ -34,9 +34,8 @@ namespace StateFlux.Service
         public GameInstance HostGameInstance(Player hostPlayer, Game game, string gameInstanceName)
         {
             GameInstance gameInstance = new GameInstance(game, gameInstanceName);
-            game.Instances.Add(gameInstance);
-            hostPlayer.GameInstanceRef = new GameInstanceRef(gameInstance);
             gameInstance.HostPlayer = hostPlayer;
+            game.Instances.Add(gameInstance);
             JoinGameInstance(gameInstance, hostPlayer);
             return gameInstance;
         }
@@ -52,41 +51,6 @@ namespace StateFlux.Service
             player.GameInstanceRef = new GameInstanceRef(gameInstance);
             gameInstance.Players.Add(player);
         }
-
-
-        /*
-        private Dictionary<string, Player> LoadPlayerDatabase()
-        {
-            Dictionary<string, Player> map = null;
-            try
-            {
-                if (File.Exists(_database))
-                {
-                    map = JsonConvert.DeserializeObject<Dictionary<string, Player>>(File.ReadAllText(_database));
-                    foreach(string key in map.Keys)
-                    {
-                        map[key].SessionId = key;
-                    }
-                }
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
-            if(map == null)
-            {
-                map = new Dictionary<string, Player>();
-            }
-
-            return map;
-        }
-
-        public void SavePlayerDatabase()
-        {
-            File.WriteAllText(_database, JsonConvert.SerializeObject(PlayerDatabase,Formatting.Indented));
-        }
-        */
 
         static public Server Instance { get; } = new Server();
     }

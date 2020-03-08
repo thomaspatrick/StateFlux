@@ -7,6 +7,11 @@ namespace StateFlux.Model
 {
     public class GameInstanceRef
     {
+        public GameInstanceRef()
+        {
+            Id = Guid.Empty;
+        }
+
         public GameInstanceRef(GameInstance that)
         {
             Id = that.Id;
@@ -19,16 +24,19 @@ namespace StateFlux.Model
         public string GameName { get; set; }
     }
 
+    public enum GameInstanceState { WaitingForPlayers, Starting, InProgress, Stopping, Finished }
     public class GameInstance
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
         public Game Game { get; set; }
 
-        [JsonIgnore]
+        public GameInstanceState State { get; set; }
+
+        //[JsonIgnore]
         public List<Player> Players { get; set; }
 
-        [JsonIgnore]
+        //[JsonIgnore]
         public Player HostPlayer { get; set; }
 
         public GameInstance(Game game, string name)
@@ -36,6 +44,7 @@ namespace StateFlux.Model
             Players = new List<Player>();
             Game = game;
             Name = name;
+            State = GameInstanceState.WaitingForPlayers;
         }
     }
 }

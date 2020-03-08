@@ -194,6 +194,11 @@ public class StateFluxClient : MonoBehaviour
                         ChatSaidMessage msg = (ChatSaidMessage)message;
                         foreach (var listener in listeners) listener.OnStateFluxChatSaid(msg);
                     }
+                    else if (message.MessageType == MessageTypeNames.ServerError)
+                    {
+                        ServerErrorMessage msg = (ServerErrorMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxServerError(msg);
+                    }
                     else
                     {
                         foreach (var listener in listeners) listener.OnStateFluxOtherMessage(message);

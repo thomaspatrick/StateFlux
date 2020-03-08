@@ -202,45 +202,54 @@ namespace StateFlux.Client
             Log("Exiting ProcessMessages");
         }
 
-        private void ProcessMessagesHandler(object source, MessageEventArgs e)
+        private void ProcessMessagesHandler(object source, MessageEventArgs evnt)
         {
-            string msgTxt = e.Data.ToString();
-            Message responseMessage = JsonConvert.DeserializeObject<Message>(msgTxt);
             Message mappedMessage = null;
+            try
+            {
+                string msgTxt = evnt.Data.ToString();
+                Message responseMessage = JsonConvert.DeserializeObject<Message>(msgTxt);
 
-            if (responseMessage.MessageType == MessageTypeNames.ChatSaid)
-            {
-                mappedMessage = JsonConvert.DeserializeObject<ChatSaidMessage>(msgTxt);
+                if (responseMessage.MessageType == MessageTypeNames.ChatSaid)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<ChatSaidMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.PlayerListing)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<PlayerListingMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.GameInstanceCreated)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<GameInstanceCreatedMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.JoinedGameInstance)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<JoinedGameInstanceMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.GameInstanceListing)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<GameInstanceListingMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.RequestFullState)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<RequestFullStateMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.StateChanged)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<StateChangedMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.ServerError)
+                {
+                    ServerErrorMessage error = JsonConvert.DeserializeObject<ServerErrorMessage>(msgTxt);
+                    OnServerError(error);
+                    mappedMessage = error;
+                }
             }
-            else if (responseMessage.MessageType == MessageTypeNames.PlayerListing)
+            catch (Exception e)
             {
-                mappedMessage = JsonConvert.DeserializeObject<PlayerListingMessage>(msgTxt);
-            }
-            else if (responseMessage.MessageType == MessageTypeNames.GameInstanceCreated)
-            {
-                mappedMessage = JsonConvert.DeserializeObject<GameInstanceCreatedMessage>(msgTxt);
-            }
-            else if (responseMessage.MessageType == MessageTypeNames.JoinedGameInstance)
-            {
-                mappedMessage = JsonConvert.DeserializeObject<JoinedGameInstanceMessage>(msgTxt);
-            }
-            else if (responseMessage.MessageType == MessageTypeNames.GameInstanceListing)
-            {
-                mappedMessage = JsonConvert.DeserializeObject<GameInstanceListingMessage>(msgTxt);
-            }
-            else if (responseMessage.MessageType == MessageTypeNames.RequestFullState)
-            {
-                mappedMessage = JsonConvert.DeserializeObject<RequestFullStateMessage>(msgTxt);
-            }
-            else if (responseMessage.MessageType == MessageTypeNames.StateChanged)
-            {
-                mappedMessage = JsonConvert.DeserializeObject<StateChangedMessage>(msgTxt);
-            }
-            else if (responseMessage.MessageType == MessageTypeNames.ServerError)
-            {
-                ServerErrorMessage error = JsonConvert.DeserializeObject<ServerErrorMessage>(msgTxt);
-                OnServerError(error);
-                mappedMessage = error;
+                ServerErrorMessage errorMessage = new ServerErrorMessage { Error = $"Failed to deserialize message. (server/client protocol mismatch?) {e.ToString()}" };
+                OnServerError(errorMessage);
+                mappedMessage = errorMessage;
             }
 
             if (mappedMessage != null)
@@ -251,15 +260,18 @@ namespace StateFlux.Client
 
         private void OnServerError(ServerErrorMessage serverErrorMessage)
         {
-            lock(this)
+            Log($"{DateTime.Now}: server error '{serverErrorMessage.Error}'!");
+            lock (this)
             {
-                if (serverErrorMessage.Error.Contains("requires a user session"))
+                if (serverErrorMessage.Error.Contains("requires a user session") ||
+                   serverErrorMessage.Error.Contains("Failed to deserialize"))
                 {
+                    Log($"{DateTime.Now}: resetting saved session due to error");
                     ResetSavedSession();
                 }
+                Log($"{DateTime.Now}: closing socket due to error");
                 if (_webSocket!=null) _webSocket.Close();
             }
-            Log($"{DateTime.Now}: server error '{serverErrorMessage.Error}'!");
         }
 
         private bool Authenticate()
@@ -329,15 +341,19 @@ namespace StateFlux.Client
 
             if (authenticated.MessageType != MessageTypeNames.Authenticated)
             {
+                string err = $"Player login rejected {authenticated.Status} : {authenticated.StatusMessage}";
                 ResetSavedSession();
-                return;
+                OnServerError(new ServerErrorMessage { Error = err });
+                throw new Exception(err);
             }
 
             if (authenticated.Status != AuthenticationStatus.Authenticated)
             {
-                Log($"Player login rejected {authenticated.Status} : {authenticated.StatusMessage}");
+                string err = $"Player login rejected {authenticated.Status} : {authenticated.StatusMessage}";
+                Log(err);
                 ResetSavedSession();
-                return;
+                _responses.Enqueue(new ServerErrorMessage { Error = err });
+                throw new Exception(err);
             }
 
             _currentPlayer = new PlayerClientInfo
