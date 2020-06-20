@@ -125,7 +125,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         while(true)
         {
-            if (StateFluxClient.Instance.connected)
+            if (StateFluxClient.Instance.openWithIdentity)
             {
                 StateFluxClient.Instance.SendRequest(new PlayerListMessage());
                 StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
@@ -218,6 +218,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         Debug.Log($"LobbyManager.OnClickToLogout");
         StateFluxClient.Instance.Logout();
         ClearPlayerListView();
+        ClearGameInstanceListView();
         StartCoroutine(ActivateLoginPanel());
     }
 
@@ -365,7 +366,8 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         canvasGroup.alpha = 0;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
-        Debug.Log($"User says join game id {maybeJoinThisGameInstance.Id}");
+        Debug.Log($"Requestion to join game instance {maybeJoinThisGameInstance.Name}");
+        StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
     }
 
     public void onClickDismissJoinGame()

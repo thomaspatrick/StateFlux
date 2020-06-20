@@ -45,6 +45,7 @@ namespace StateFlux.Model
             Game = game;
             Name = name;
             State = GameInstanceState.WaitingForPlayers;
+            Id = Guid.NewGuid();
         }
     }
 }

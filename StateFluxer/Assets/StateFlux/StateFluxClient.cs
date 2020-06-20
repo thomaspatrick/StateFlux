@@ -24,6 +24,7 @@ public class StateFluxClient : MonoBehaviour
     public string userName;
     [HideInInspector]
     public bool connected;
+    public bool openWithIdentity;
     public string endpoint;
     [HideInInspector]
     public bool hasSavedSession;
@@ -96,7 +97,7 @@ public class StateFluxClient : MonoBehaviour
         InitializeClient(userName); // start StateFlux.Client with a username (performs authentication using the name)
     }
 
-    private void InitializeClient(string userName) // 
+    private void InitializeClient(string userName)
     {
         if(client != null)
         {
@@ -114,7 +115,7 @@ public class StateFluxClient : MonoBehaviour
         {
             isInitialized = true;
             foreach (var listener in listeners) listener.OnStateFluxInitialize();
-                StartCoroutine(ReceiveAndDispatchMessages());
+            StartCoroutine(ReceiveAndDispatchMessages());
         }
     }
 
@@ -142,7 +143,6 @@ public class StateFluxClient : MonoBehaviour
 
     IEnumerator ReceiveAndDispatchMessages()
     {
-        float sec = Time.time;
         while (!client.SocketOpenWithIdentity)
         {
             Debug.Log("Waiting for a connection");
@@ -152,7 +152,7 @@ public class StateFluxClient : MonoBehaviour
 
         while(true)
         {
-            bool openWithIdentity = client.SocketOpenWithIdentity;
+            openWithIdentity = client.SocketOpenWithIdentity;
             if(!connected && openWithIdentity)
             {
                 connected = true;
@@ -166,11 +166,11 @@ public class StateFluxClient : MonoBehaviour
                 foreach (var listener in listeners) listener.OnStateFluxDisconnect();
             }
 
-            StateFlux.Model.Message message = null;
             bool draining = true;
-            while(draining)
+            int drainingCount = 50;
+            while(draining && (drainingCount--) > 0)
             {
-                message = client.ReceiveResponse();
+                StateFlux.Model.Message message = client.ReceiveResponse();
                 draining = (message != null);
                 if (draining)
                 {

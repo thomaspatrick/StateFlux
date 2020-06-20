@@ -172,7 +172,9 @@ namespace StateFlux.Client
                     Message message;
                     if (_requests.TryDequeue(out message))
                     {
-                        _webSocket.Send(JsonConvert.SerializeObject(message));
+                        string serializedMessage = JsonConvert.SerializeObject(message);
+                        Log($"Sending message to server '{serializedMessage}'"); // enable for debug only
+                        _webSocket.Send(serializedMessage);
                     }
                 }
                 catch (Exception e)
@@ -268,9 +270,9 @@ namespace StateFlux.Client
                 {
                     Log($"{DateTime.Now}: resetting saved session due to error");
                     ResetSavedSession();
+                    Log($"{DateTime.Now}: closing socket due to error");
+                    if (_webSocket != null) _webSocket.Close();
                 }
-                Log($"{DateTime.Now}: closing socket due to error");
-                if (_webSocket!=null) _webSocket.Close();
             }
         }
 
@@ -344,6 +346,7 @@ namespace StateFlux.Client
                 string err = $"Player login rejected {authenticated.Status} : {authenticated.StatusMessage}";
                 ResetSavedSession();
                 OnServerError(new ServerErrorMessage { Error = err });
+                ShouldExit = true;
                 throw new Exception(err);
             }
 
@@ -353,6 +356,7 @@ namespace StateFlux.Client
                 Log(err);
                 ResetSavedSession();
                 _responses.Enqueue(new ServerErrorMessage { Error = err });
+                ShouldExit = true;
                 throw new Exception(err);
             }
 

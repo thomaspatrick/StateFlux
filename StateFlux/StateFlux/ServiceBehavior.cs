@@ -53,19 +53,28 @@ namespace StateFlux.Service
         public Player GetCurrentSessionPlayer()
         {
             string sessionCookieValue = GetSessionCookieValue();
+            if (string.IsNullOrEmpty(sessionCookieValue)) return null;
+
             Player player = Server.Instance.Players.FirstOrDefault(p => p.SessionData.SessionId == sessionCookieValue);
             if(player == null)
             {
                 // not an active player - check database?
+                LogMessage($"Session cookie '{sessionCookieValue}' not found in player list", false);
                 if (sessionCookieValue != null)
                 {
                     Player found = Server.Instance.playerRepository.GetAllPlayers().FirstOrDefault(p => p.SessionData?.SessionId == sessionCookieValue);
-                    if(found != null)
+                    if (found != null)
                     {
                         // add player to active list
+                        LogMessage($"Activating player {found.Name} from database that matches session cookie '{sessionCookieValue}'", false);
                         player = found;
                         player.GameInstanceRef = null;
                         Server.Instance.Players.Add(player);
+                    }
+                    else
+                    {
+                        string msg = $"Connected user provided an unknown session cookie '{sessionCookieValue}' (not found in database)!";
+                        throw new Exception(msg);
                     }
                 }
             }
@@ -81,6 +90,7 @@ namespace StateFlux.Service
             };
             Server.Instance.playerRepository.InsertPlayer(player);
             Server.Instance.Players.Add(player);
+            LogMessage($"Created player {player.Name} with session '{player.SessionData.SessionId}'.  Added to players & saved to database");
             return player;
         }
 
@@ -141,9 +151,9 @@ namespace StateFlux.Service
             return null;
         }
 
-        public void LogMessage(string message)
+        public void LogMessage(string message, bool showPlayerIdentity = true)
         {
-            Player currentPlayer = GetCurrentSessionPlayer();
+            Player currentPlayer = showPlayerIdentity ? GetCurrentSessionPlayer() : null;
             string playerName = currentPlayer != null ? currentPlayer.Name : "unknown";
             Console.WriteLine($"{DateTime.Now.ToString(_dateFormat)},{playerName},{message}");
         }
@@ -185,6 +195,7 @@ namespace StateFlux.Service
             };
 
             Broadcast(playerListingMessage, null, true);
+            Server.Instance.RemoveHostedGameInstance(currentPlayer);
             Server.Instance.Players.Remove(currentPlayer);
             base.OnClose(e);
         }

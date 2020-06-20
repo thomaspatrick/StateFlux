@@ -10,8 +10,6 @@ namespace StateFlux.Service
 {
     public class Server
     {
-        private const string _database = "playerdb.json";
-
         public List<Player> Players { get; set; }
         public List<Game> Games { get; set; }
         public List<ChatSaid> Chat { get; set; }
@@ -50,6 +48,18 @@ namespace StateFlux.Service
             }
             player.GameInstanceRef = new GameInstanceRef(gameInstance);
             gameInstance.Players.Add(player);
+        }
+
+        public GameInstance RemoveHostedGameInstance(Player hostPlayer)
+        {
+            foreach(var game in Games)
+            {
+                GameInstance found = game.Instances.FirstOrDefault(i=>i.HostPlayer==hostPlayer);
+                game.Instances.Remove(found);
+            }
+            hostPlayer.GameInstanceRef = null;
+            playerRepository.UpdatePlayer(hostPlayer);
+            return null;
         }
 
         static public Server Instance { get; } = new Server();

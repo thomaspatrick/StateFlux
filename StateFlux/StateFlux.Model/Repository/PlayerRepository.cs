@@ -80,7 +80,10 @@ namespace StateFlux.Model.Repository
             try
             {
                 if (File.Exists(_database))
+                {
                     map = JsonConvert.DeserializeObject<Dictionary<Guid, Player>>(File.ReadAllText(_database));
+                    Console.WriteLine($"Loaded player repository from '{_database}'");
+                }
             }
             catch (Exception e)
             {
@@ -90,6 +93,7 @@ namespace StateFlux.Model.Repository
             if (map == null)
             {
                 map = new Dictionary<Guid, Player>();
+                Console.WriteLine("Created new player repository");
             }
 
             return map;
@@ -98,6 +102,7 @@ namespace StateFlux.Model.Repository
         public void SaveDb()
         {
             File.WriteAllText(_database, JsonConvert.SerializeObject(_players, Formatting.Indented));
+            Console.WriteLine($"Saved player database to '{_database}'");
         }
     }
 }

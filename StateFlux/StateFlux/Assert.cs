@@ -29,7 +29,7 @@ namespace StateFlux.Service
 
         static private void ThrowError(string msg, AppWebSocketBehavior behavior)
         {
-            LogMessage(msg, behavior);
+            LogMessage($"{msg},{Environment.StackTrace}", behavior);
             throw new Exception(msg);
         }
 

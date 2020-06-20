@@ -18,17 +18,18 @@ public class ErrorPanelBehavior : MonoBehaviour
         text.text = error;
         timeLeft += showErrorDuration;
         var canvasGroup = GetComponent<CanvasGroup>();
-        if (canvasGroup.alpha == 0)
-        {
-            canvasGroup.alpha = 1;
-            canvasGroup.blocksRaycasts = true;
-            canvasGroup.interactable = true;
-        }
+        canvasGroup.alpha = 1;
+        canvasGroup.blocksRaycasts = true;
+        canvasGroup.interactable = true;
     }
 
     public void OnClickDismiss()
     {
         timeLeft = 0;
+        var canvasGroup = GetComponent<CanvasGroup>();
+        canvasGroup.alpha = 0;
+        canvasGroup.blocksRaycasts = false;
+        canvasGroup.interactable = false;
     }
 
     public IEnumerator AutomaticDismiss()
@@ -36,8 +37,11 @@ public class ErrorPanelBehavior : MonoBehaviour
         while(true)
         {
             yield return new WaitForSeconds(1);
-            timeLeft -= 1f;
-            if(timeLeft<=0)
+            if(timeLeft>0)
+            {
+                timeLeft -= 1f;
+            }
+            else
             {
                 var canvasGroup = GetComponent<CanvasGroup>();
                 canvasGroup.alpha = 0;

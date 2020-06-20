@@ -27,7 +27,7 @@ namespace StateFlux.Service.Handlers
 
             if(game.Instances.Any(g => g.HostPlayer.Id == currentPlayer.Id))
             {
-                string msg = $"Player tried to create game instance of game '{message.GameName}' but player is already hosting a game!";
+                string msg = $"Player can only create one game instance at a time.";
                 _websocket.LogMessage(msg);
                 throw new Exception(msg);
             }
