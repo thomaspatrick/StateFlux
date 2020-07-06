@@ -17,6 +17,7 @@ namespace StateFlux.Client
             var client = new Client();
             client.SessionSaveFilename = "cheese.json";
             client.RequestedUsername = "happyboi";
+            client.Endpoint = "ws://localhost:8888";
             client.Start();
 
             bool once = true;

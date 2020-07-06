@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "StateFlux.Tester": {
+      "commandName": "Project",
+      "commandLineArgs": "ws://localhost:8888"
+    }
+  }
+}

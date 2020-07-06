@@ -118,13 +118,14 @@ namespace StateFlux.Service
                 WebSocketSessionManager sessionManager = this.Sessions;
                 foreach (Player player in Server.Instance.Players)
                 {
-                    if (!meToo) continue;
                     GameInstance playerGameInstance = FindPlayerGameInstance(player);
                     if (gameInstanceRef == null || gameInstanceRef.Id == playerGameInstance.Id)
                     {
                         IWebSocketSession session;
                         if (sessionManager.TryGetSession(player.SessionData.WebsocketSessionId, out session))
                         {
+                            if (player.Id == this.GetCurrentSessionPlayer().Id && !meToo) continue;
+                            LogMessage($"Sending to {player.Name} msg={JsonConvert.SerializeObject(msg)}");
                             session.Context.WebSocket.Send(msg);
                         }
                     }

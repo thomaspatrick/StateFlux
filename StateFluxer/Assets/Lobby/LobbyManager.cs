@@ -48,7 +48,10 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     private GameObject chatScrollView;
     private GameObject newGamePanel;
     private GameObject errorPanel;
+    private GameObject modalBackgroundPanel;
     private GameInstance maybeJoinThisGameInstance;
+    private GameObject currentShowingPanel;
+    private bool hostingGame;
 
     public string lastUsername
     {
@@ -92,10 +95,9 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         chatField = GameObject.Find("Content/Text");
         newGamePanel = GameObject.Find("New Game Panel");
         errorPanel = GameObject.Find("ErrorPanel");
-
+        modalBackgroundPanel = GameObject.Find("ModalBackdrop");
 
         StateFluxClient.Instance.AddListener(this);
-
         StateFluxClient.Instance.Initialize();
 
         if (StateFluxClient.Instance.hasSavedSession)
@@ -140,30 +142,50 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     IEnumerator ActivateLobbyPanel()
     {
         yield return null;
-        ShowPanel(lobby, true);
-        ShowPanel(login, false);
+        ShowPanel(lobby, modalBackgroundPanel, true);
+        ShowPanel(login, modalBackgroundPanel, false);
     }
 
     IEnumerator ActivateLoginPanel()
     {
         yield return null;
-        ShowPanel(lobby, false);
-        ShowPanel(login, true);
+        ShowPanel(lobby, modalBackgroundPanel, false);
+        ShowPanel(login, null, true);
         var field = userNameInputField.GetComponent<InputField>();
         if (!string.IsNullOrEmpty(lastUsername)) field.text = lastUsername;
         EventSystem.current.SetSelectedGameObject(userNameInputField);
         field.ActivateInputField();
     }
 
-    void ShowPanel(GameObject obj, bool show)
+    void ShowPanel(GameObject obj, GameObject backdrop, bool show)
     {
         Debug.Log($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
+        if(show)
+        {
+            currentShowingPanel = obj;
+        }
+        else
+        {
+            currentShowingPanel = null;
+        }
+
         var canvasGroup = obj.GetComponent<CanvasGroup>();
         if(canvasGroup != null)
         {
             canvasGroup.alpha = show ? 1 : 0;
             canvasGroup.interactable = show;
             canvasGroup.blocksRaycasts = show;
+        }
+        
+        if(backdrop != null)
+        {
+            canvasGroup = backdrop.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = show ? 1 : 0;
+                canvasGroup.interactable = show;
+                canvasGroup.blocksRaycasts = show;
+            }
         }
     }
 
@@ -192,17 +214,18 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         lastUsername = StateFluxClient.Instance.userName = GetLoginUsername();
         Debug.Log($"LobbyManager.OnClickToConnect as {lastUsername}");
         StateFluxClient.Instance.Login();
+
     }
 
     public void OnClickToCreateGame()
     {
-        ShowPanel(newGamePanel, true);
+        ShowPanel(newGamePanel, modalBackgroundPanel, true);
         GameObject.Find("New Game Panel");
     }
 
     public void OnClickConfirmCreateGame()
     {
-        ShowPanel(newGamePanel, false);
+        ShowPanel(newGamePanel, modalBackgroundPanel, false);
         InputField inputField = newGamePanel.GetComponentInChildren<InputField>();
         var message = new CreateGameInstanceMessage
         {
@@ -231,6 +254,16 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnUsernameChanged(string newValue)
     {
         GameObject.Find("LoginButton").GetComponent<Button>().interactable = !string.IsNullOrEmpty(newValue);
+    }
+
+    public void OnClickedModalBackdrop()
+    {
+        Debug.Log("clicked modal backdrop!");
+        if(currentShowingPanel)
+        {
+            if(currentShowingPanel.name != "Login Panel")
+                ShowPanel(currentShowingPanel, modalBackgroundPanel, false);
+        }
     }
 
     public string GetLoginUsername()
@@ -309,6 +342,17 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         chatScrollView.GetComponent<ScrollRect>().normalizedPosition = new Vector2(0, 0); // scroll to bottom
     }
 
+    public void OnStateFluxGameInstanceCreatedMessage(GameInstanceCreatedMessage message)
+    {
+        Debug.Log($"Server says {message.GameInstance.HostPlayer.Name} began hosting a new game instance: {message.GameInstance.Name}");
+        Debug.Log($"I am {this.lastUsername}");
+        if (message.GameInstance.HostPlayer.Name == lastUsername)
+        {
+            Debug.Log($"Current user is hosting a game!");
+            hostingGame = true;
+        }
+    }
+
     public void OnStateFluxGameInstanceListing(GameInstanceListingMessage message)
     {
         ClearGameInstanceListView();
@@ -345,35 +389,74 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     }
     public void OnClickGameInstance(string buttonName)
     {
-        string[] parts = buttonName.Split(new char[] { '.' });
-        string gameInstanceId = parts[1];
-        GameInstance gameInstance = games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
-        var joinGamePanel = GameObject.Find("Join Game Panel");
-        var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
-        canvasGroup.alpha = 1;
-        canvasGroup.interactable = true;
-        canvasGroup.blocksRaycasts = true;
-        var textPanel = GameObject.Find("Join Game Panel/Text");
-        var txt = textPanel.GetComponent<Text>();
-        txt.text = $"Join {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
-        maybeJoinThisGameInstance = gameInstance;
+        if(!hostingGame)
+        {
+            string[] parts = buttonName.Split(new char[] { '.' });
+            string gameInstanceId = parts[1];
+            GameInstance gameInstance = games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
+            var joinGamePanel = GameObject.Find("Join Game Panel");
+            var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 1;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+            var textPanel = GameObject.Find("Join Game Panel/Text");
+            var txt = textPanel.GetComponent<Text>();
+            txt.text = $"Join {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
+            maybeJoinThisGameInstance = gameInstance;
+        }
+        else
+        {
+            string[] parts = buttonName.Split(new char[] { '.' });
+            string gameInstanceId = parts[1];
+            GameInstance gameInstance = games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
+            var leaveGamePanel = GameObject.Find("Leave Game Panel");
+            var canvasGroup = leaveGamePanel.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 1;
+            canvasGroup.interactable = true;
+            canvasGroup.blocksRaycasts = true;
+            var textPanel = GameObject.Find("Leave Game Panel/Text");
+            var txt = textPanel.GetComponent<Text>();
+            txt.text = $"Leave {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
+            maybeJoinThisGameInstance = gameInstance;
+        }
     }
 
     public void OnClickJoinGame()
+    {
+        if(!this.hostingGame)
+        {
+            var joinGamePanel = GameObject.Find("Join Game Panel");
+            var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
+            canvasGroup.alpha = 0;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+            Debug.Log($"Requested join game instance {maybeJoinThisGameInstance.Name}");
+            StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
+        }
+        else
+        {
+            Debug.Log("Join game request supressed because you are hosting a game");
+        }
+
+    }
+
+    public void OnClickDismissJoinGame()
     {
         var joinGamePanel = GameObject.Find("Join Game Panel");
         var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
         canvasGroup.alpha = 0;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
-        Debug.Log($"Requestion to join game instance {maybeJoinThisGameInstance.Name}");
-        StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
     }
 
-    public void onClickDismissJoinGame()
+    public void OnClickLeaveGame()
     {
-        var joinGamePanel = GameObject.Find("Join Game Panel");
-        var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
+        StateFluxClient.Instance.SendRequest(new LeaveGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
+    }
+    public void OnClickDismissLeaveGame()
+    {
+        var leaveGamePanel = GameObject.Find("Leave Game Panel");
+        var canvasGroup = leaveGamePanel.GetComponent<CanvasGroup>();
         canvasGroup.alpha = 0;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;

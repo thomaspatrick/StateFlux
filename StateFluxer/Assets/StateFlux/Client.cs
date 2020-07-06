@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using StateFlux.Model;
 using WebSocketSharp;
 using WebSocketSharp.Net;
+using UnityEngine.Assertions.Must;
 
 #if (UNITY_STANDALONE || UNITY_EDITOR)
 using UnityEngine;
@@ -129,12 +130,18 @@ namespace StateFlux.Client
                             {
                                 ResetSavedSession();
                                 _webSocket.Close();
+                                ShouldExit = true;
                             }
                         }
                     };
                     _webSocket.OnClose += (object source, CloseEventArgs e) =>
                     {
-                        Log($"Websocket.OnClose - {e.Reason}");
+                        Log($"Websocket.OnClose - WasClean: {e.WasClean}, Reason: {e.Reason}, Code: {e.Code}");
+                        lock (this)
+                        {
+                            if (!e.WasClean) ResetSavedSession();
+                            ShouldExit = true;
+                        }
                     };
 
                     _webSocket.SetCookie(new Cookie(MessageConstants.SessionCookieName, _currentPlayer.SessionId));
@@ -222,6 +229,7 @@ namespace StateFlux.Client
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.GameInstanceCreated)
                 {
+                    Debug.Log("GameInstanceCreated message");
                     mappedMessage = JsonConvert.DeserializeObject<GameInstanceCreatedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.JoinedGameInstance)

@@ -46,7 +46,7 @@ namespace StateFlux.Service.Handlers
             {
                 GameInstance = gameInstance
             };
-            _websocket.Broadcast(broadcastMessage, null, true);
+            _websocket.Broadcast(broadcastMessage, new GameInstanceRef(gameInstance), true);
         }
 
         public GameInstanceListingMessage GameInstanceList(GameInstanceListMessage gameInstanceListMessage)

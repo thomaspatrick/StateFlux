@@ -184,6 +184,11 @@ public class StateFluxClient : MonoBehaviour
                         PlayerListingMessage msg = (PlayerListingMessage)message;
                         foreach (var listener in listeners) listener.OnStateFluxPlayerListing(msg);
                     }
+                    else if (message.MessageType == MessageTypeNames.GameInstanceCreated)
+                    {
+                        GameInstanceCreatedMessage msg = (GameInstanceCreatedMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceCreatedMessage(msg);
+                    }
                     else if (message.MessageType == MessageTypeNames.GameInstanceListing)
                     {
                         GameInstanceListingMessage msg = (GameInstanceListingMessage)message;

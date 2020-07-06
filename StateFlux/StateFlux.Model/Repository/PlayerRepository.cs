@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace StateFlux.Model.Repository
@@ -44,6 +45,8 @@ namespace StateFlux.Model.Repository
                     throw new Exception("failed to insert player, GUID already in DB");
                 }
                 result = player.Id = Guid.NewGuid();
+                RemoveAllPlayersWithName(player.Name); // if there are duplicate records for this username, this one wins
+                player.LastUpdated = DateTime.Now;
                 _players.Add(player.Id, player);
                 SaveDb();
             }
@@ -56,13 +59,17 @@ namespace StateFlux.Model.Repository
                 LazyLoadPlayerDb();
                 Player p = GetPlayerById(player.Id);
                 if (p == null)
+                {
+                    player.LastUpdated = DateTime.Now;
                     InsertPlayer(player);
+                }
                 else
                 {
                     p.Name = player.Name;
                     p.Bval = player.Bval;
                     p.Fval = player.Fval;
                     p.Sval = player.Sval;
+                    p.LastUpdated = DateTime.Now;
                     p.SessionData = player.SessionData;
                     SaveDb();
                 }
@@ -103,6 +110,12 @@ namespace StateFlux.Model.Repository
         {
             File.WriteAllText(_database, JsonConvert.SerializeObject(_players, Formatting.Indented));
             Console.WriteLine($"Saved player database to '{_database}'");
+        }
+
+        private void RemoveAllPlayersWithName(string name)
+        {
+            var playersToRemove = _players.Values.Where(p => p.Name == name);
+            foreach (var playr in playersToRemove) _players.Remove(playr.Id);
         }
     }
 }
