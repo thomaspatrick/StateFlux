@@ -80,6 +80,31 @@ namespace StateFlux.Service.Handlers
                 _websocket.LogMessage($"Player joins game instance '{message.GameName}:{message.InstanceName}'");
                 var broadcastMessage = new JoinedGameInstanceMessage() { Player = currentPlayer };
                 _websocket.Broadcast(broadcastMessage, null, true);
+                if(gameInstance.Players.Count == 2)
+                {
+                    Server.Instance.StartGameInstance(gameInstance.Id);
+                    var startMessage = new StartGameInstanceMessage() { GameInstance = gameInstance };
+                    _websocket.Broadcast(startMessage, new GameInstanceRef(gameInstance), true);
+                }
+            }
+        }
+
+        public void LeaveGameInstance(LeaveGameInstanceMessage message)
+        {
+            var currentPlayer = _websocket.GetCurrentSessionPlayer();
+            Assert.ThrowIfNull(currentPlayer, "requires a user session", _websocket);
+
+            var game = Server.Instance.Games.FirstOrDefault(g => g.Name == message.GameName);
+            Assert.ThrowIfNull(game, $"game {game.Name} not found", _websocket);
+
+            var gameInstance = game.Instances.FirstOrDefault(g => g.Name == message.InstanceName);
+            Assert.ThrowIfNull(gameInstance, $"game instance {game.Name}:{gameInstance.Name} not found", _websocket);
+            if (gameInstance != null)
+            {
+                Server.Instance.LeaveGameInstance(gameInstance, _websocket.GetCurrentSessionPlayer());
+                _websocket.LogMessage($"Player left game instance '{message.GameName}:{message.InstanceName}'");
+                var broadcastMessage = new LeftGameInstanceMessage() { Player = currentPlayer };
+                _websocket.Broadcast(broadcastMessage, null, true);
             }
         }
     }

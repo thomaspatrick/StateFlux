@@ -20,6 +20,7 @@ namespace StateFlux.Model
         // gameinstance request messages
         public static string CreateGameInstance = "CreateGameInstance";
         public static string JoinGameInstance = "JoinGameInstance";
+        public static string StartGameInstance = "StartGameInstance";
         public static string LeaveGameInstance = "LeaveGameInstance";
         public static string GameInstanceList = "GameInstanceList";
 

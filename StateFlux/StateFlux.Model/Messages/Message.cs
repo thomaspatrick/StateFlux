@@ -168,6 +168,37 @@ namespace StateFlux.Model
         public Player Player { get; set; } 
     }
 
+    public class LeaveGameInstanceMessage : Message
+    {
+        public LeaveGameInstanceMessage()
+        {
+            MessageType = MessageTypeNames.LeaveGameInstance;
+        }
+
+        public string GameName { get; set; }
+        public string InstanceName { get; set; }
+    }
+
+    public class LeftGameInstanceMessage : Message
+    {
+        public LeftGameInstanceMessage()
+        {
+            MessageType = MessageTypeNames.LeftGameInstance;
+        }
+
+        public Player Player { get; set; }
+    }
+
+    public class StartGameInstanceMessage : Message
+    {
+        public StartGameInstanceMessage()
+        {
+            MessageType = MessageTypeNames.StartGameInstance;
+        }
+
+        public GameInstance GameInstance { get; set; }
+    }
+
     public class ServerErrorMessage : Message
     {
         public ServerErrorMessage()

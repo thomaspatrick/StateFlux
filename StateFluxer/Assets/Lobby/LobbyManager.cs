@@ -125,6 +125,8 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     IEnumerator PollLists()
     {
+        yield return new WaitForSeconds(1);
+        /* remove this method later - doing this on the server side now
         while(true)
         {
             if (StateFluxClient.Instance.openWithIdentity)
@@ -134,6 +136,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             }
             yield return new WaitForSeconds(10);
         }
+         */
     }
 
     // ------------------------------------
@@ -452,6 +455,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnClickLeaveGame()
     {
         StateFluxClient.Instance.SendRequest(new LeaveGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
+        OnClickDismissLeaveGame();
     }
     public void OnClickDismissLeaveGame()
     {

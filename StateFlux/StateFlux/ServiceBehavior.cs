@@ -7,6 +7,7 @@ using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 using StateFlux.Model;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace StateFlux.Service
 {
@@ -22,8 +23,6 @@ namespace StateFlux.Service
         static protected List<Type> _handlerTypes = FindAssignableFrom(typeof(MessageHandler));
         protected Dictionary<Type, MessageHandlerBinding> _handlerMap;
         static protected Dictionary<string, string> _tokens = new Dictionary<string, string>();
-
-
         private const string _messageClassPrefix = "StateFlux.Model.";
         private const string _messageClassSuffix = "Message, StateFlux.Model";
         private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss";
@@ -125,7 +124,7 @@ namespace StateFlux.Service
                         if (sessionManager.TryGetSession(player.SessionData.WebsocketSessionId, out session))
                         {
                             if (player.Id == this.GetCurrentSessionPlayer().Id && !meToo) continue;
-                            LogMessage($"Sending to {player.Name} msg={JsonConvert.SerializeObject(msg)}");
+                            //LogMessage($"Sending to {player.Name} msg={JsonConvert.SerializeObject(msg)}");
                             session.Context.WebSocket.Send(msg);
                         }
                     }
@@ -154,7 +153,15 @@ namespace StateFlux.Service
 
         public void LogMessage(string message, bool showPlayerIdentity = true)
         {
-            Player currentPlayer = showPlayerIdentity ? GetCurrentSessionPlayer() : null;
+            Player currentPlayer = null;
+            try
+            {
+                currentPlayer = showPlayerIdentity? GetCurrentSessionPlayer() : null;
+            }
+            catch(Exception)
+            {
+            }
+
             string playerName = currentPlayer != null ? currentPlayer.Name : "unknown";
             Console.WriteLine($"{DateTime.Now.ToString(_dateFormat)},{playerName},{message}");
         }
@@ -170,6 +177,7 @@ namespace StateFlux.Service
                 {
                     currentPlayer.SessionData.WebsocketSessionId = this.ID;
                 }
+                Server.Instance.SessionManager = this.Sessions;
             }
             catch (Exception e)
             {
@@ -183,22 +191,29 @@ namespace StateFlux.Service
             base.OnError(e);
         }
 
-        protected override void OnClose(CloseEventArgs e)
+        protected override void OnClose(CloseEventArgs closeEventArgs)
         {
-            Player currentPlayer = GetCurrentSessionPlayer();
-            LogMessage($"Connection closed");
-            if (currentPlayer == null) return;
-
-            IEnumerable<Player> players = Server.Instance.Players;
-            PlayerListingMessage playerListingMessage = new PlayerListingMessage
+            try
             {
-                Players = Server.Instance.Players.Where(p => p.SessionData.SessionId != currentPlayer.SessionData.SessionId).ToList()
-            };
+                Player currentPlayer = GetCurrentSessionPlayer();
+                if (currentPlayer == null) return; 
 
-            Broadcast(playerListingMessage, null, true);
-            Server.Instance.RemoveHostedGameInstance(currentPlayer);
-            Server.Instance.Players.Remove(currentPlayer);
-            base.OnClose(e);
+                LogMessage($"Connection closed");
+
+                IEnumerable<Player> players = Server.Instance.Players;
+                PlayerListingMessage playerListingMessage = new PlayerListingMessage
+                {
+                    Players = Server.Instance.Players.Where(p => p.SessionData.SessionId != currentPlayer.SessionData.SessionId).ToList()
+                };
+
+                Broadcast(playerListingMessage, null, true);
+                Server.Instance.RemoveHostedGameInstance(currentPlayer);
+                Server.Instance.Players.Remove(currentPlayer);
+            }
+            finally
+            {
+                base.OnClose(closeEventArgs);
+            }
         }
 
         protected override void OnMessage(MessageEventArgs e)
