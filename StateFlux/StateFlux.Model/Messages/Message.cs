@@ -158,11 +158,11 @@ namespace StateFlux.Model
         public string InstanceName { get; set; }
     }
 
-    public class JoinedGameInstanceMessage : Message
+    public class GameInstanceJoinedMessage : Message
     {
-        public JoinedGameInstanceMessage()
+        public GameInstanceJoinedMessage()
         {
-            MessageType = MessageTypeNames.JoinedGameInstance;
+            MessageType = MessageTypeNames.GameInstanceJoined;
         }
 
         public Player Player { get; set; } 
@@ -179,24 +179,24 @@ namespace StateFlux.Model
         public string InstanceName { get; set; }
     }
 
-    public class LeftGameInstanceMessage : Message
+    public class GameInstanceLeftMessage : Message
     {
-        public LeftGameInstanceMessage()
+        public GameInstanceLeftMessage()
         {
-            MessageType = MessageTypeNames.LeftGameInstance;
+            MessageType = MessageTypeNames.GameInstanceLeft;
         }
 
         public Player Player { get; set; }
     }
 
-    public class StartGameInstanceMessage : Message
+    public class GameInstanceStartMessage : Message
     {
-        public StartGameInstanceMessage()
+        public GameInstanceStartMessage()
         {
-            MessageType = MessageTypeNames.StartGameInstance;
+            MessageType = MessageTypeNames.GameInstanceStart;
         }
 
-        public GameInstance GameInstance { get; set; }
+        public GameInstanceRef GameInstance { get; set; }
     }
 
     public class ServerErrorMessage : Message

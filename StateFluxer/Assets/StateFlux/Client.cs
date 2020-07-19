@@ -232,13 +232,17 @@ namespace StateFlux.Client
                     Debug.Log("GameInstanceCreated message");
                     mappedMessage = JsonConvert.DeserializeObject<GameInstanceCreatedMessage>(msgTxt);
                 }
-                else if (responseMessage.MessageType == MessageTypeNames.JoinedGameInstance)
+                else if (responseMessage.MessageType == MessageTypeNames.GameInstanceJoined)
                 {
-                    mappedMessage = JsonConvert.DeserializeObject<JoinedGameInstanceMessage>(msgTxt);
+                    mappedMessage = JsonConvert.DeserializeObject<GameInstanceJoinedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.GameInstanceListing)
                 {
                     mappedMessage = JsonConvert.DeserializeObject<GameInstanceListingMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.GameInstanceStart)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<GameInstanceStartMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.RequestFullState)
                 {

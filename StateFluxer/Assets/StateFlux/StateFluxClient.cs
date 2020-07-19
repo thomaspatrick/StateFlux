@@ -34,6 +34,8 @@ public class StateFluxClient : MonoBehaviour
     public string sessionFile;
     [HideInInspector]
     public bool isInitialized;
+    [HideInInspector]
+    public bool isHosting;
 
     private List<IStateFluxListener> listeners = new List<IStateFluxListener>();
 
@@ -187,14 +189,25 @@ public class StateFluxClient : MonoBehaviour
                     else if (message.MessageType == MessageTypeNames.GameInstanceCreated)
                     {
                         GameInstanceCreatedMessage msg = (GameInstanceCreatedMessage)message;
-                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceCreatedMessage(msg);
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceCreated(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.GameInstanceListing)
                     {
                         GameInstanceListingMessage msg = (GameInstanceListingMessage)message;
                         foreach (var listener in listeners) listener.OnStateFluxGameInstanceListing(msg);
                     }
-                    else if(message.MessageType == MessageTypeNames.ChatSaid)
+                    else if (message.MessageType == MessageTypeNames.GameInstanceJoined)
+                    {
+                        GameInstanceJoinedMessage msg = (GameInstanceJoinedMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceJoined(msg);
+                    }
+                    else if (message.MessageType == MessageTypeNames.GameInstanceStart)
+                    {
+                        isHosting = true;
+                        GameInstanceStartMessage msg = (GameInstanceStartMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceStart(msg);
+                    }
+                    else if (message.MessageType == MessageTypeNames.ChatSaid)
                     {
                         ChatSaidMessage msg = (ChatSaidMessage)message;
                         foreach (var listener in listeners) listener.OnStateFluxChatSaid(msg);

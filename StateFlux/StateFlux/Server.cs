@@ -113,9 +113,11 @@ namespace StateFlux.Service
         {
             GameInstance gameInstance = LookupInstance(gameInstanceId);
             gameInstance.State = GameInstanceState.Starting;
+            var startMessage = new GameInstanceStartMessage() { GameInstance = new GameInstanceRef(gameInstance) };
+            BroadcastSystemMessage(startMessage);
         }
 
-        private void Tick(object? state)
+        private void Tick(object state)
         {
             if (SessionManager == null) return;
 

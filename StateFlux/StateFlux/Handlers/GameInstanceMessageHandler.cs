@@ -78,13 +78,11 @@ namespace StateFlux.Service.Handlers
             {
                 Server.Instance.JoinGameInstance(gameInstance, _websocket.GetCurrentSessionPlayer());
                 _websocket.LogMessage($"Player joins game instance '{message.GameName}:{message.InstanceName}'");
-                var broadcastMessage = new JoinedGameInstanceMessage() { Player = currentPlayer };
+                var broadcastMessage = new GameInstanceJoinedMessage() { Player = currentPlayer };
                 _websocket.Broadcast(broadcastMessage, null, true);
-                if(gameInstance.Players.Count == 2)
+                if(gameInstance.State == GameInstanceState.WaitingForPlayers && gameInstance.Players.Count >= gameInstance.Game.MinPlayers)
                 {
                     Server.Instance.StartGameInstance(gameInstance.Id);
-                    var startMessage = new StartGameInstanceMessage() { GameInstance = gameInstance };
-                    _websocket.Broadcast(startMessage, new GameInstanceRef(gameInstance), true);
                 }
             }
         }
@@ -103,7 +101,7 @@ namespace StateFlux.Service.Handlers
             {
                 Server.Instance.LeaveGameInstance(gameInstance, _websocket.GetCurrentSessionPlayer());
                 _websocket.LogMessage($"Player left game instance '{message.GameName}:{message.InstanceName}'");
-                var broadcastMessage = new LeftGameInstanceMessage() { Player = currentPlayer };
+                var broadcastMessage = new GameInstanceLeftMessage() { Player = currentPlayer };
                 _websocket.Broadcast(broadcastMessage, null, true);
             }
         }

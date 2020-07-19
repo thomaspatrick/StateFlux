@@ -9,6 +9,7 @@ using StateFlux.Model;
 using StateFlux.Client;
 using System.Text;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public class LobbyManager : MonoBehaviour, IStateFluxListener
 {
@@ -126,17 +127,6 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     IEnumerator PollLists()
     {
         yield return new WaitForSeconds(1);
-        /* remove this method later - doing this on the server side now
-        while(true)
-        {
-            if (StateFluxClient.Instance.openWithIdentity)
-            {
-                StateFluxClient.Instance.SendRequest(new PlayerListMessage());
-                StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
-            }
-            yield return new WaitForSeconds(10);
-        }
-         */
     }
 
     // ------------------------------------
@@ -293,7 +283,9 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         Debug.Log("OnStateFluxConnect!");
         StartCoroutine(ActivateLobbyPanel());
-        StartCoroutine(PollLists());
+        StartCoroutine(PollLists()); // remove this later, now pushing from server instead of polling
+        StateFluxClient.Instance.SendRequest(new PlayerListMessage());
+        StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
     }
 
     public void OnStateFluxDisconnect()
@@ -390,6 +382,21 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             textMeshPro.text = builder.ToString();
         }
     }
+
+    public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
+    {
+        Debug.Log("OnStateFluxGameInstanceCreated!");
+    }
+    public void OnStateFluxGameInstanceJoined(GameInstanceJoinedMessage message)
+    {
+        Debug.Log("OnStateFluxGameInstanceJoined!");
+    }
+    public void OnStateFluxGameInstanceStart(GameInstanceStartMessage message)
+    {
+        Debug.Log("OnStateFluxGameInstanceStart!");
+        SceneManager.LoadScene("PlaceholderGame");
+    }
+
     public void OnClickGameInstance(string buttonName)
     {
         if(!hostingGame)
