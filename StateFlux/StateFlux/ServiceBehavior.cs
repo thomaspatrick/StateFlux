@@ -25,7 +25,7 @@ namespace StateFlux.Service
         static protected Dictionary<string, string> _tokens = new Dictionary<string, string>();
         private const string _messageClassPrefix = "StateFlux.Model.";
         private const string _messageClassSuffix = "Message, StateFlux.Model";
-        private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss";
+        private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss:ffff";
 
         public AppWebSocketBehavior() : base()
         {
@@ -49,13 +49,13 @@ namespace StateFlux.Service
             return value;
         }
 
-        public Player GetCurrentSessionPlayer()
+        public Player GetCurrentSessionPlayer(bool attemptLoadIfNoSession = true)
         {
             string sessionCookieValue = GetSessionCookieValue();
             if (string.IsNullOrEmpty(sessionCookieValue)) return null;
 
             Player player = Server.Instance.Players.FirstOrDefault(p => p.SessionData.SessionId == sessionCookieValue);
-            if(player == null)
+            if(attemptLoadIfNoSession && player == null)
             {
                 // not an active player - check database?
                 LogMessage($"Session cookie '{sessionCookieValue}' not found in player list", false);
@@ -136,6 +136,29 @@ namespace StateFlux.Service
             }
         }
 
+        public void Send(Message message, Guid playerId)
+        {
+            try
+            {
+                Player currentPlayer = GetCurrentSessionPlayer();
+                string msg = JsonConvert.SerializeObject(message);
+                WebSocketSessionManager sessionManager = this.Sessions;
+                foreach (Player player in Server.Instance.Players)
+                {
+                    IWebSocketSession session;
+                    if (sessionManager.TryGetSession(player.SessionData.WebsocketSessionId, out session))
+                    {
+                        if (playerId == this.GetCurrentSessionPlayer().Id) continue;
+                        session.Context.WebSocket.Send(msg);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LogMessage(e.Message);
+            }
+        }
+
         public GameInstance FindPlayerGameInstance(Player player)
         {
             foreach (Game game in Server.Instance.Games)
@@ -156,7 +179,7 @@ namespace StateFlux.Service
             Player currentPlayer = null;
             try
             {
-                currentPlayer = showPlayerIdentity? GetCurrentSessionPlayer() : null;
+                currentPlayer = showPlayerIdentity? GetCurrentSessionPlayer(attemptLoadIfNoSession: false) : null;
             }
             catch(Exception)
             {
@@ -226,16 +249,21 @@ namespace StateFlux.Service
                 MessageHandler handler = binding.objectTarget;
                 MethodInfo method = binding.methodTarget;
 
+                Player player = this.GetCurrentSessionPlayer();
+                string pname = (player != null) ? player.Name : "unknown";
+                if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestStateChange)
+                {
+                    LogMessage($"OnMessage.Processing {message.MessageType} from {pname}");
+                }
                 Message responseMessage = (Message)method.Invoke(handler, new object[] { message });
                 if(responseMessage != null)
                 {
                     Respond(responseMessage);
                 }
-                // (enable this for debug logging - makes too much log output 
-                Player player = this.GetCurrentSessionPlayer();
-                string pname = (player != null) ? player.Name : "unknown"; 
-                LogMessage($"processed {message.MessageType} from {pname}");
-                
+                if(message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestStateChange)
+                {
+                    LogMessage($"OnMessage.Processed {message.MessageType} from {pname}");
+                }
             }
             catch (Exception exception)
             {

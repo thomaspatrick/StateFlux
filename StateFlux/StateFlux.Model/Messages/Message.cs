@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace StateFlux.Model
 {
@@ -38,7 +39,7 @@ namespace StateFlux.Model
             MessageType = MessageTypeNames.ChatSay;
         }
 
-        public string say { get; set; }
+        public string Say { get; set; }
     }
 
     public class ChatSaidMessage : Message
@@ -80,31 +81,52 @@ namespace StateFlux.Model
         public string Name { get; set; }
     }
 
-    public class StateChangeMessage : Message
+    public class HostStateChangeMessage : Message
     {
-        public StateChangeMessage()
+        public HostStateChangeMessage()
         {
-            MessageType = MessageTypeNames.StateChange;
+            MessageType = MessageTypeNames.HostStateChange;
         }
 
         public StateChange Payload { get; set; }
     }
 
-    public class StateChangedMessage : Message
+    public class GuestStateChangeMessage : Message
     {
-        public StateChangedMessage()
+        public GuestStateChangeMessage()
         {
-            MessageType = MessageTypeNames.StateChanged;
+            MessageType = MessageTypeNames.GuestStateChange;
+        }
+        public StateChange Payload { get; set; }
+    }
+
+    public class HostStateChangedMessage : Message
+    {
+        public HostStateChangedMessage()
+        {
+            MessageType = MessageTypeNames.HostStateChanged;
         }
 
         public StateChange Payload { get; set; }
     }
 
-    public class RequestFullStateMessage : Message
+    // server 
+    public class GuestStateChangedMessage : Message
     {
-        public RequestFullStateMessage()
+        public GuestStateChangedMessage()
         {
-            MessageType = MessageTypeNames.RequestFullState;
+            MessageType = MessageTypeNames.GuestStateChanged;
+        }
+
+        public Guid Guest { get; set; }
+        public StateChange Payload { get; set; }
+    }
+
+    public class GuestRequestFullStateMessage : Message
+    {
+        public GuestRequestFullStateMessage()
+        {
+            MessageType = MessageTypeNames.GuestRequestFullState;
         }
     }
 
@@ -187,6 +209,8 @@ namespace StateFlux.Model
         }
 
         public Player Player { get; set; }
+        public string GameName { get; set; }
+        public string InstanceName { get; set; }
     }
 
     public class GameInstanceStartMessage : Message
@@ -197,6 +221,7 @@ namespace StateFlux.Model
         }
 
         public GameInstanceRef GameInstance { get; set; }
+        public Player Host { get; set; }
     }
 
     public class ServerErrorMessage : Message

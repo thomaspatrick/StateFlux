@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +7,6 @@ using Newtonsoft.Json;
 using StateFlux.Model;
 using WebSocketSharp;
 using WebSocketSharp.Net;
-using UnityEngine.Assertions.Must;
 
 #if (UNITY_STANDALONE || UNITY_EDITOR)
 using UnityEngine;
@@ -22,8 +20,8 @@ namespace StateFlux.Client
         private WebSocket _webSocket;
         private Task _task;
         private bool ShouldExit { get; set; }
-        private ConcurrentQueue<Message> _requests = new ConcurrentQueue<Message>();
-        private ConcurrentQueue<Message> _responses = new ConcurrentQueue<Message>();
+        private readonly ConcurrentQueue<Message> _requests = new ConcurrentQueue<Message>();
+        private readonly ConcurrentQueue<Message> _responses = new ConcurrentQueue<Message>();
 
         public string UserName { get; set; }
         public string RequestedUsername { get; set; }
@@ -36,6 +34,10 @@ namespace StateFlux.Client
                     return _webSocket != null ? _webSocket.ReadyState : WebSocketState.Closed;
                 }
             }
+        }
+        public PlayerClientInfo CurrentPlayer
+        {
+            get => _currentPlayer;
         }
 
         public bool SocketOpenWithIdentity
@@ -56,8 +58,7 @@ namespace StateFlux.Client
 
         public Message ReceiveResponse()
         {
-            Message message = null;
-            if(_responses.TryDequeue(out message))
+            if(_responses.TryDequeue(out Message message))
             {
                 return message;
             }
@@ -176,11 +177,13 @@ namespace StateFlux.Client
 
                 try
                 {
-                    Message message;
-                    if (_requests.TryDequeue(out message))
+                    if (_requests.TryDequeue(out Message message))
                     {
                         string serializedMessage = JsonConvert.SerializeObject(message);
-                        Log($"Sending message to server '{serializedMessage}'"); // enable for debug only
+                        if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestStateChange)
+                        {
+                            Log($"Sending message to server '{serializedMessage}'"); // enable for debug only
+                        }
                         _webSocket.Send(serializedMessage);
                     }
                 }
@@ -244,24 +247,33 @@ namespace StateFlux.Client
                 {
                     mappedMessage = JsonConvert.DeserializeObject<GameInstanceStartMessage>(msgTxt);
                 }
-                else if (responseMessage.MessageType == MessageTypeNames.RequestFullState)
+                else if (responseMessage.MessageType == MessageTypeNames.GameInstanceLeft)
                 {
-                    mappedMessage = JsonConvert.DeserializeObject<RequestFullStateMessage>(msgTxt);
+                    mappedMessage = JsonConvert.DeserializeObject<GameInstanceLeftMessage>(msgTxt);
                 }
-                else if (responseMessage.MessageType == MessageTypeNames.StateChanged)
+                else if (responseMessage.MessageType == MessageTypeNames.GuestRequestFullState)
                 {
-                    mappedMessage = JsonConvert.DeserializeObject<StateChangedMessage>(msgTxt);
+                    mappedMessage = JsonConvert.DeserializeObject<GuestRequestFullStateMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.HostStateChanged)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<HostStateChangedMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.GuestStateChanged)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<GuestStateChangedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.ServerError)
                 {
                     ServerErrorMessage error = JsonConvert.DeserializeObject<ServerErrorMessage>(msgTxt);
                     OnServerError(error);
                     mappedMessage = error;
+
                 }
             }
             catch (Exception e)
             {
-                ServerErrorMessage errorMessage = new ServerErrorMessage { Error = $"Failed to deserialize message. (server/client protocol mismatch?) {e.ToString()}" };
+                ServerErrorMessage errorMessage = new ServerErrorMessage { Error = $"Failed to deserialize message. (server/client protocol mismatch?) {e}" };
                 OnServerError(errorMessage);
                 mappedMessage = errorMessage;
             }
@@ -274,11 +286,13 @@ namespace StateFlux.Client
 
         private void OnServerError(ServerErrorMessage serverErrorMessage)
         {
-            Log($"{DateTime.Now}: server error '{serverErrorMessage.Error}'!");
+            Log($"{DateTime.Now}: server error '{serverErrorMessage.Error}'");
             lock (this)
             {
                 if (serverErrorMessage.Error.Contains("requires a user session") ||
-                   serverErrorMessage.Error.Contains("Failed to deserialize"))
+                   serverErrorMessage.Error.Contains("Failed to deserialize") ||
+                   serverErrorMessage.Error.Contains("unknown session cookie")
+                   )
                 {
                     Log($"{DateTime.Now}: resetting saved session due to error");
                     ResetSavedSession();
@@ -315,8 +329,10 @@ namespace StateFlux.Client
                     throw new Exception("Websocket Timeout");
                 }
 
-                AuthenticateMessage requestMessage = new AuthenticateMessage();
-                requestMessage.PlayerName = RequestedUsername;
+                AuthenticateMessage requestMessage = new AuthenticateMessage
+                {
+                    PlayerName = RequestedUsername
+                };
                 string msg = JsonConvert.SerializeObject(requestMessage);
                 lock(this)
                 {
@@ -351,23 +367,22 @@ namespace StateFlux.Client
 
         private void HandleAuthResponseMessage(object source, MessageEventArgs e)
         {
-            AuthenticatedMessage authenticated = JsonConvert.DeserializeObject<AuthenticatedMessage>(e.Data.ToString());
-
-            if (authenticated.MessageType != MessageTypeNames.Authenticated)
+            Message message = JsonConvert.DeserializeObject<Message>(e.Data.ToString());
+            if(message.MessageType != MessageTypeNames.Authenticated)
             {
-                string err = $"Player login rejected {authenticated.Status} : {authenticated.StatusMessage}";
-                ResetSavedSession();
-                OnServerError(new ServerErrorMessage { Error = err });
-                ShouldExit = true;
-                throw new Exception(err);
+                // sometimes we can be sent a push message if the timing is right, so ignore it
+                var err = $"unrecognized message preceeding authenticate response, msg = { e.Data.ToString()}";
+                Log(err);
+                return;
             }
 
+            AuthenticatedMessage authenticated = JsonConvert.DeserializeObject<AuthenticatedMessage>(e.Data.ToString());
             if (authenticated.Status != AuthenticationStatus.Authenticated)
             {
-                string err = $"Player login rejected {authenticated.Status} : {authenticated.StatusMessage}";
+                string err = $"Player login rejected ({authenticated.Status}), message= '{authenticated.StatusMessage}'";
                 Log(err);
                 ResetSavedSession();
-                _responses.Enqueue(new ServerErrorMessage { Error = err });
+                OnServerError(new ServerErrorMessage { Error = err });
                 ShouldExit = true;
                 throw new Exception(err);
             }
@@ -385,6 +400,7 @@ namespace StateFlux.Client
 
         private void SaveSession()
         {
+            Log($"Saving session to {SessionSaveFilename} as {JsonConvert.SerializeObject(_currentPlayer)}");
             File.WriteAllText(SessionSaveFilename, JsonConvert.SerializeObject(_currentPlayer, Formatting.Indented));
         }
 
@@ -395,12 +411,14 @@ namespace StateFlux.Client
 
         private PlayerClientInfo LoadSession()
         {
-            return JsonConvert.DeserializeObject<PlayerClientInfo>(File.ReadAllText(SessionSaveFilename));
+            string serializedSession = File.ReadAllText(SessionSaveFilename);
+            Log($"Loading session from {SessionSaveFilename} as {serializedSession}");
+            return JsonConvert.DeserializeObject<PlayerClientInfo>(serializedSession);
         }
 
         private void ResetSavedSession()
         {
-            File.Delete(SessionSaveFilename);
+            if(!string.IsNullOrEmpty(SessionSaveFilename)) File.Delete(SessionSaveFilename);
             _currentPlayer = null;
             UserName = "";
         }

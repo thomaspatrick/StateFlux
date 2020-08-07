@@ -12,6 +12,8 @@ namespace StateFlux.Model.Repository
         private Dictionary<Guid, Player> _players;
         private string _database = "playerdb.json";
 
+        private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss:ffff";
+
         public PlayerRepository()
         {
         }
@@ -89,7 +91,7 @@ namespace StateFlux.Model.Repository
                 if (File.Exists(_database))
                 {
                     map = JsonConvert.DeserializeObject<Dictionary<Guid, Player>>(File.ReadAllText(_database));
-                    Console.WriteLine($"Loaded player repository from '{_database}'");
+                    LogMessage($"Loaded player database from '{_database}'");
                 }
             }
             catch (Exception e)
@@ -100,7 +102,7 @@ namespace StateFlux.Model.Repository
             if (map == null)
             {
                 map = new Dictionary<Guid, Player>();
-                Console.WriteLine("Created new player repository");
+                LogMessage($"Created new player database");
             }
 
             return map;
@@ -109,7 +111,7 @@ namespace StateFlux.Model.Repository
         public void SaveDb()
         {
             File.WriteAllText(_database, JsonConvert.SerializeObject(_players, Formatting.Indented));
-            Console.WriteLine($"Saved player database to '{_database}'");
+            LogMessage($"Saved player database to '{_database}'");
         }
 
         private void RemoveAllPlayersWithName(string name)
@@ -117,5 +119,11 @@ namespace StateFlux.Model.Repository
             var playersToRemove = _players.Values.Where(p => p.Name == name);
             foreach (var playr in playersToRemove) _players.Remove(playr.Id);
         }
+        private void LogMessage(string message)
+        {
+            string playerName = "unknown";
+            Console.WriteLine($"{DateTime.Now.ToString(_dateFormat)},{playerName},{message}");
+        }
+
     }
 }

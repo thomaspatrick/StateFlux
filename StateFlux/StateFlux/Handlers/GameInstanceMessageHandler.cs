@@ -101,7 +101,7 @@ namespace StateFlux.Service.Handlers
             {
                 Server.Instance.LeaveGameInstance(gameInstance, _websocket.GetCurrentSessionPlayer());
                 _websocket.LogMessage($"Player left game instance '{message.GameName}:{message.InstanceName}'");
-                var broadcastMessage = new GameInstanceLeftMessage() { Player = currentPlayer };
+                var broadcastMessage = new GameInstanceLeftMessage() { Player = currentPlayer, GameName = message.GameName, InstanceName = message.InstanceName };
                 _websocket.Broadcast(broadcastMessage, null, true);
             }
         }

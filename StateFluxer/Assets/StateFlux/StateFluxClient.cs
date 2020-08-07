@@ -5,6 +5,7 @@ using StateFlux.Model;
 using StateFlux.Client;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Configuration;
 
 public class StateFluxClient : MonoBehaviour
 {
@@ -37,7 +38,7 @@ public class StateFluxClient : MonoBehaviour
     [HideInInspector]
     public bool isHosting;
 
-    private List<IStateFluxListener> listeners = new List<IStateFluxListener>();
+    private readonly List<IStateFluxListener> listeners = new List<IStateFluxListener>();
 
     public void Start()
     {
@@ -46,9 +47,9 @@ public class StateFluxClient : MonoBehaviour
         clientId = Guid.NewGuid().ToString();
         sessionFile = Application.persistentDataPath;
         if (Application.isEditor)
-            sessionFile += "\\currentplayer-editor.json";
+            sessionFile += "/currentplayer-editor.json";
         else {
-            sessionFile += "\\currentPlayer.json";
+            sessionFile += "/currentPlayer.json";
         }
         hasSavedSession = File.Exists(sessionFile);
         if (string.IsNullOrEmpty(endpoint)) endpoint = "ws://play.pixelkingsoftware.com/Service";
@@ -129,6 +130,7 @@ public class StateFluxClient : MonoBehaviour
 
     public void ClearSavedSessionFile()
     {
+        Debug.Log($"Deleting session file {sessionFile}");
         File.Delete(sessionFile);
     }
 
@@ -176,10 +178,15 @@ public class StateFluxClient : MonoBehaviour
                 draining = (message != null);
                 if (draining)
                 {
-                    if (message.MessageType == MessageTypeNames.StateChanged)
+                    if (message.MessageType == MessageTypeNames.HostStateChanged)
                     {
-                        StateChangedMessage msg = (StateChangedMessage)message;
-                        foreach (var listener in listeners) listener.OnStateFluxStateChanged(msg);
+                        // FIXME: convert all the others to linq method ForEach
+                        listeners.ForEach(l => l.OnStateFluxHostStateChanged((HostStateChangedMessage)message));
+                    }
+                    else if (message.MessageType == MessageTypeNames.GuestStateChanged)
+                    {
+                        GuestStateChangedMessage msg = (GuestStateChangedMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxGuestStateChanged(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.PlayerListing)
                     {
@@ -203,9 +210,18 @@ public class StateFluxClient : MonoBehaviour
                     }
                     else if (message.MessageType == MessageTypeNames.GameInstanceStart)
                     {
-                        isHosting = true;
                         GameInstanceStartMessage msg = (GameInstanceStartMessage)message;
+                        Debug.Log($"Game start message host is {msg.Host.Name}");
+                        Debug.Log($"Current player name is {client.CurrentPlayer.Name}");
+                        isHosting = (msg.Host.Name == client.CurrentPlayer.Name);
                         foreach (var listener in listeners) listener.OnStateFluxGameInstanceStart(msg);
+                    }
+                    else if (message.MessageType == MessageTypeNames.GameInstanceLeft)
+                    {
+                        GameInstanceLeftMessage msg = (GameInstanceLeftMessage)message;
+                        Debug.Log($"Player {msg.Player.Name} left {msg.GameName}:{msg.InstanceName}");
+                        Debug.Log($"Current player name is {client.CurrentPlayer.Name}");
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceLeft(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.ChatSaid)
                     {

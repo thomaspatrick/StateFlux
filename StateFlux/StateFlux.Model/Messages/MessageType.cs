@@ -35,11 +35,13 @@ namespace StateFlux.Model
         public static string GameInstanceStopped = "GameInstanceStopped";
 
         // state request messages
-        public static string StateChange = "StateChange";
-        public static string RequestFullState = "RequestFullState";
+        public static string HostStateChange = "HostStateChange";
+        public static string GuestStateChange = "GuestStateChange";
+        public static string GuestRequestFullState = "GuestRequestFullState";
 
         // state broadcast response messages
-        public static string StateChanged = "StateChanged";
+        public static string HostStateChanged = "HostStateChanged";
+        public static string GuestStateChanged = "GuestStateChanged";
 
         // error message
         public static string ServerError = "ServerError";

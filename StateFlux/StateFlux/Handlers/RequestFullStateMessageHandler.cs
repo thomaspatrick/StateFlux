@@ -3,19 +3,20 @@ using StateFlux.Model;
 
 namespace StateFlux.Service
 {
-    public class RequestFullStateMessageHandler : MessageHandler
+    public class GuestRequestFullStateMessageHandler : MessageHandler
     {
-        public RequestFullStateMessageHandler(AppWebSocketBehavior serviceBehavior) : base(serviceBehavior)
+        public GuestRequestFullStateMessageHandler(AppWebSocketBehavior serviceBehavior) : base(serviceBehavior)
         {
         }
 
-        public Message RequestFullBatch(RequestFullStateMessage message)
+        public Message GuestRequestFullState(GuestRequestFullStateMessage message)
         {
             Player player = _websocket.GetCurrentSessionPlayer();
             Assert.ThrowIfNull(player, "requires a user session", _websocket);
 
             GameInstance gameInstance = _websocket.FindPlayerGameInstance(player);
-            _websocket.Broadcast(new RequestFullStateMessage(), new GameInstanceRef(gameInstance), true);
+            Assert.ThrowIfFalse(player.Id != gameInstance.HostPlayer.Id, "only guests should ask for full state", _websocket);
+            _websocket.Send(new GuestRequestFullStateMessage(), gameInstance.Id);
             return null;
         }
     }

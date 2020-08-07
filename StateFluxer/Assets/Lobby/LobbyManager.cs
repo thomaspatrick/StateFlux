@@ -10,6 +10,7 @@ using StateFlux.Client;
 using System.Text;
 using System.Linq;
 using UnityEngine.SceneManagement;
+using System;
 
 public class LobbyManager : MonoBehaviour, IStateFluxListener
 {
@@ -44,29 +45,35 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     private GameObject userNameInputField;
     private GameObject userNameInputText;
     private GameObject userNameInputPlaceholder;
-    private GameObject chatInputField;
     private GameObject chatField;
     private GameObject chatScrollView;
     private GameObject newGamePanel;
     private GameObject errorPanel;
     private GameObject modalBackgroundPanel;
+    private GameObject debugPanel;
     private GameInstance maybeJoinThisGameInstance;
     private GameObject currentShowingPanel;
     private bool hostingGame;
 
-    public string lastUsername
+    public string LastUsername
     {
         get 
         {
-            string value = null;
+            string tmp = null;
             if (File.Exists(lastUsernameSaveFile))
             {
-                value = File.ReadAllText(lastUsernameSaveFile);
+                tmp = File.ReadAllText(lastUsernameSaveFile);
+                DebugLog($"read '{tmp}' from {lastUsernameSaveFile}");
             }
-            return value;
+            else
+            {
+                DebugLog($"{lastUsernameSaveFile} does not exist");
+            }
+            return tmp;
         }
         set
         {
+            DebugLog($"write '{value}' to {lastUsernameSaveFile}");
             File.WriteAllText(lastUsernameSaveFile, value);
         }
     }
@@ -85,18 +92,18 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         userNameInputPlaceholder = GameObject.Find("InputField/Placeholder");
         lastUsernameSaveFile = Application.persistentDataPath;
         if(Application.isEditor)
-            lastUsernameSaveFile += "\\lastUsername-editor.txt";
+            lastUsernameSaveFile += "/lastUsername-editor.txt";
         else
         {
-            lastUsernameSaveFile += "\\lastUsername.txt";
+            lastUsernameSaveFile += "/lastUsername.txt";
         }
 
         chatScrollView = GameObject.Find("Chat/Scroll View");
-        chatInputField = GameObject.Find("ChatInputField/Text");
         chatField = GameObject.Find("Content/Text");
         newGamePanel = GameObject.Find("New Game Panel");
         errorPanel = GameObject.Find("ErrorPanel");
         modalBackgroundPanel = GameObject.Find("ModalBackdrop");
+        debugPanel = GameObject.Find("DebugPanel");
 
         StateFluxClient.Instance.AddListener(this);
         StateFluxClient.Instance.Initialize();
@@ -145,14 +152,19 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         ShowPanel(lobby, modalBackgroundPanel, false);
         ShowPanel(login, null, true);
         var field = userNameInputField.GetComponent<InputField>();
-        if (!string.IsNullOrEmpty(lastUsername)) field.text = lastUsername;
+        if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
+        else
+        {
+            LastUsername = Guid.NewGuid().ToString();
+            field.text = LastUsername;
+        }
         EventSystem.current.SetSelectedGameObject(userNameInputField);
         field.ActivateInputField();
     }
 
     void ShowPanel(GameObject obj, GameObject backdrop, bool show)
     {
-        Debug.Log($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
+        DebugLog($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
         if(show)
         {
             currentShowingPanel = obj;
@@ -204,10 +216,9 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickToConnect()
     {
-        lastUsername = StateFluxClient.Instance.userName = GetLoginUsername();
-        Debug.Log($"LobbyManager.OnClickToConnect as {lastUsername}");
+        LastUsername = StateFluxClient.Instance.userName = GetLoginUsername();
+        DebugLog($"LobbyManager.OnClickToConnect as {LastUsername}");
         StateFluxClient.Instance.Login();
-
     }
 
     public void OnClickToCreateGame()
@@ -231,7 +242,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickToLogout()
     {
-        Debug.Log($"LobbyManager.OnClickToLogout");
+        DebugLog($"LobbyManager.OnClickToLogout");
         StateFluxClient.Instance.Logout();
         ClearPlayerListView();
         ClearGameInstanceListView();
@@ -240,7 +251,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnChatInputSubmit(string value)
     {
-        StateFluxClient.Instance.SendRequest(new ChatSayMessage { say = value });
+        StateFluxClient.Instance.SendRequest(new ChatSayMessage { Say = value });
     }
 
 
@@ -251,7 +262,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickedModalBackdrop()
     {
-        Debug.Log("clicked modal backdrop!");
+        DebugLog("clicked modal backdrop!");
         if(currentShowingPanel)
         {
             if(currentShowingPanel.name != "Login Panel")
@@ -262,7 +273,9 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public string GetLoginUsername()
     {
         string placeholderText = userNameInputPlaceholder.GetComponent<Text>().text;
+        DebugLog($"PlaceholderText = {placeholderText}");
         string userNameText = userNameInputText.GetComponent<Text>().text;
+        DebugLog($"UserNameText = {userNameText}");
         return (userNameText == placeholderText) ? null : userNameText;
     }
 
@@ -271,17 +284,17 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxInitialize()
     {
-        Debug.Log("OnStateFluxInitialize");
+        DebugLog("OnStateFluxInitialize");
     }
 
     public void OnStateFluxWaitingToConnect()
     {
-        Debug.Log("OnStateFluxWaitingToConnect");
+        DebugLog("OnStateFluxWaitingToConnect");
     }
 
     public void OnStateFluxConnect()
     {
-        Debug.Log("OnStateFluxConnect!");
+        DebugLog("OnStateFluxConnect!");
         StartCoroutine(ActivateLobbyPanel());
         StartCoroutine(PollLists()); // remove this later, now pushing from server instead of polling
         StateFluxClient.Instance.SendRequest(new PlayerListMessage());
@@ -290,11 +303,15 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxDisconnect()
     {
-        Debug.Log("OnStateFluxDisconnect!");
+        DebugLog("OnStateFluxDisconnect!");
         StopCoroutine(PollLists());
     }
 
-    public void OnStateFluxStateChanged(StateChangedMessage message)
+    public void OnStateFluxHostStateChanged(HostStateChangedMessage message)
+    {
+    }
+
+    public void OnStateFluxGuestStateChanged(GuestStateChangedMessage message)
     {
     }
 
@@ -337,15 +354,19 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         chatScrollView.GetComponent<ScrollRect>().normalizedPosition = new Vector2(0, 0); // scroll to bottom
     }
 
-    public void OnStateFluxGameInstanceCreatedMessage(GameInstanceCreatedMessage message)
+    public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
     {
-        Debug.Log($"Server says {message.GameInstance.HostPlayer.Name} began hosting a new game instance: {message.GameInstance.Name}");
-        Debug.Log($"I am {this.lastUsername}");
-        if (message.GameInstance.HostPlayer.Name == lastUsername)
+        DebugLog($"Server says {message.GameInstance.HostPlayer.Name} began hosting a new game instance: {message.GameInstance.Name}");
+        DebugLog($"I am {this.LastUsername}");
+        if (message.GameInstance.HostPlayer.Name == LastUsername)
         {
-            Debug.Log($"Current user is hosting a game!");
+            DebugLog($"Current user is hosting a game!");
             hostingGame = true;
         }
+    }
+    public void OnStateFluxGameInstanceLeft(GameInstanceLeftMessage message)
+    {
+        DebugLog($"Player {message.Player.Name} left {message.GameName}:{message.InstanceName}");
     }
 
     public void OnStateFluxGameInstanceListing(GameInstanceListingMessage message)
@@ -383,17 +404,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         }
     }
 
-    public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
-    {
-        Debug.Log("OnStateFluxGameInstanceCreated!");
-    }
     public void OnStateFluxGameInstanceJoined(GameInstanceJoinedMessage message)
     {
-        Debug.Log("OnStateFluxGameInstanceJoined!");
+        DebugLog("OnStateFluxGameInstanceJoined!");
     }
     public void OnStateFluxGameInstanceStart(GameInstanceStartMessage message)
     {
-        Debug.Log("OnStateFluxGameInstanceStart!");
+        DebugLog("OnStateFluxGameInstanceStart!");
         SceneManager.LoadScene("PlaceholderGame");
     }
 
@@ -440,12 +457,12 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             canvasGroup.alpha = 0;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
-            Debug.Log($"Requested join game instance {maybeJoinThisGameInstance.Name}");
+            DebugLog($"Requested join game instance {maybeJoinThisGameInstance.Name}");
             StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
         }
         else
         {
-            Debug.Log("Join game request supressed because you are hosting a game");
+            DebugLog("Join game request supressed because you are hosting a game");
         }
 
     }
@@ -475,12 +492,25 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxOtherMessage(Message message)
     {
-        Debug.Log($"OnStateFluxOtherMessage - {message.MessageType}!");
+        DebugLog($"OnStateFluxOtherMessage - {message.MessageType}!");
     }
 
     public void OnStateFluxServerError(ServerErrorMessage message)
     {
-        Debug.Log($"OnStateFluxServerError - {message.Error}!");
+        DebugLog($"OnStateFluxServerError - {message.Error}!");
+
+        StartCoroutine("ActivateLoginPanel");
         errorPanel.SendMessage("OnStateFluxError", message.Error);
+    }
+
+    private void DebugLog(string msg)
+    {
+        Debug.Log(msg);
+        if(debugPanel)
+        {
+            var textComponent = debugPanel.GetComponentInChildren<UnityEngine.UI.Text>();
+            if (textComponent.text.Length > 1000) textComponent.text = textComponent.text.Substring(1000,textComponent.text.Length - 1000);
+            textComponent.text = msg + "\n" + textComponent.text;
+        }
     }
 }

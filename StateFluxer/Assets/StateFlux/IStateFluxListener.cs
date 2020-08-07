@@ -9,12 +9,14 @@ namespace StateFlux.Client
         void OnStateFluxConnect();
         void OnStateFluxDisconnect();
         void OnStateFluxServerError(ServerErrorMessage message);
-        void OnStateFluxStateChanged(StateChangedMessage message);
+        void OnStateFluxHostStateChanged(HostStateChangedMessage message);
+        void OnStateFluxGuestStateChanged(GuestStateChangedMessage message);
         void OnStateFluxPlayerListing(PlayerListingMessage message);
         void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message);
         void OnStateFluxGameInstanceJoined(GameInstanceJoinedMessage message);
         void OnStateFluxGameInstanceListing(GameInstanceListingMessage message);
         void OnStateFluxGameInstanceStart(GameInstanceStartMessage message);
+        void OnStateFluxGameInstanceLeft(GameInstanceLeftMessage message);
         void OnStateFluxChatSaid(ChatSaidMessage message);
         void OnStateFluxOtherMessage(Message message);
     }

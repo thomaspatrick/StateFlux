@@ -19,7 +19,7 @@ namespace StateFlux.Service
         {
             Player currentPlayer = _websocket.GetCurrentSessionPlayer();
             Assert.ThrowIfNull(currentPlayer, "requires a user session", _websocket);
-            ChatSaid said = new ChatSaid(currentPlayer.Name, message.say.Truncate(MaxChatStringSize));
+            ChatSaid said = new ChatSaid(currentPlayer.Name, message.Say.Truncate(MaxChatStringSize));
             _server.Chat.Add(said);
             ChatSaidMessage chatSaidMessage = new ChatSaidMessage();
             chatSaidMessage.PlayerName = said.PlayerName;

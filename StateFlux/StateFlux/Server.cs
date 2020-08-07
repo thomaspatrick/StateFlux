@@ -17,7 +17,7 @@ namespace StateFlux.Service
         public List<Game> Games { get; set; }
         public List<ChatSaid> Chat { get; set; }
 
-        private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss";
+        private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss:ffff";
 
         private WebSocketSessionManager _sessionManager;
         public WebSocketSessionManager SessionManager
@@ -86,10 +86,12 @@ namespace StateFlux.Service
 
         public GameInstance RemoveHostedGameInstance(Player hostPlayer)
         {
+            bool removed = false;
+
             foreach(var game in Games)
             {
                 GameInstance found = game.Instances.FirstOrDefault(i=>i.HostPlayer==hostPlayer);
-                game.Instances.Remove(found);
+                removed = game.Instances.Remove(found);
             }
             hostPlayer.GameInstanceRef = null;
             playerRepository.UpdatePlayer(hostPlayer);
@@ -113,7 +115,7 @@ namespace StateFlux.Service
         {
             GameInstance gameInstance = LookupInstance(gameInstanceId);
             gameInstance.State = GameInstanceState.Starting;
-            var startMessage = new GameInstanceStartMessage() { GameInstance = new GameInstanceRef(gameInstance) };
+            var startMessage = new GameInstanceStartMessage() { GameInstance = new GameInstanceRef(gameInstance), Host = gameInstance.HostPlayer };
             BroadcastSystemMessage(startMessage);
         }
 

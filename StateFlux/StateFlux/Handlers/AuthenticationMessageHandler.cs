@@ -25,7 +25,17 @@ namespace StateFlux.Service
                 _websocket.LogMessage($"Player failed authenticate: bad PlayerName");
                 return response;
             }
-            Player player = _websocket.GetCurrentSessionPlayer();
+            Player player;
+            try
+            {
+                player = _websocket.GetCurrentSessionPlayer();
+            }
+            catch(Exception e)
+            {
+                _websocket.LogMessage($"Caught exception from GetCurrentPlayer, {e.Message}");
+                player = null;
+            }
+
             if(player == null)
             {
                 if(Server.Instance.Players.Any(p => p.Name == message.PlayerName))
