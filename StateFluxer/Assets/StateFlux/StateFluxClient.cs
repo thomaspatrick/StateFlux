@@ -19,7 +19,7 @@ public class StateFluxClient : MonoBehaviour
         } 
     }
 
-    private Client client;
+    private StateFluxConnection connection;
 
     [HideInInspector]
     public string userName;
@@ -87,7 +87,7 @@ public class StateFluxClient : MonoBehaviour
 
     public void Initialize()
     {
-        if (hasSavedSession && client == null)
+        if (hasSavedSession && connection == null)
         {
             Debug.Log("StateFluxClient Initializing");
             InitializeClient(null); // start StateFlux.Client with no username (uses saved session)
@@ -102,18 +102,18 @@ public class StateFluxClient : MonoBehaviour
 
     private void InitializeClient(string userName)
     {
-        if(client != null)
+        if(connection != null)
         {
-            client.Stop();
+            connection.Stop();
         }
 
-        client = new Client
+        connection = new StateFluxConnection
         {
             SessionSaveFilename = sessionFile,
             Endpoint = endpoint,
             RequestedUsername = userName
         };
-        client.Start();
+        connection.Start();
         if (!isInitialized)
         {
             isInitialized = true;
@@ -124,7 +124,7 @@ public class StateFluxClient : MonoBehaviour
 
     public void Logout()
     {
-        if(client != null) client.Stop();
+        if(connection != null) connection.Stop();
         ClearSavedSessionFile();
     }
 
@@ -137,17 +137,17 @@ public class StateFluxClient : MonoBehaviour
     public void OnApplicationQuit()
     {
         StopAllCoroutines();
-        if (client != null) client.Stop();
+        if (connection != null) connection.Stop();
     }
 
     public void SendRequest(StateFlux.Model.Message message)
     {
-        client.SendRequest(message);
+        connection.SendRequest(message);
     }
 
     IEnumerator ReceiveAndDispatchMessages()
     {
-        while (!client.SocketOpenWithIdentity)
+        while (!connection.SocketOpenWithIdentity)
         {
             Debug.Log("Waiting for a connection");
             foreach (var listener in listeners) listener.OnStateFluxWaitingToConnect();
@@ -156,11 +156,11 @@ public class StateFluxClient : MonoBehaviour
 
         while(true)
         {
-            openWithIdentity = client.SocketOpenWithIdentity;
+            openWithIdentity = connection.SocketOpenWithIdentity;
             if(!connected && openWithIdentity)
             {
                 connected = true;
-                userName = client.UserName;
+                userName = connection.UserName;
                 foreach (var listener in listeners) listener.OnStateFluxConnect();
             }
             else if(connected && !openWithIdentity)
@@ -174,7 +174,7 @@ public class StateFluxClient : MonoBehaviour
             int drainingCount = 50;
             while(draining && (drainingCount--) > 0)
             {
-                StateFlux.Model.Message message = client.ReceiveResponse();
+                StateFlux.Model.Message message = connection.ReceiveResponse();
                 draining = (message != null);
                 if (draining)
                 {
@@ -211,16 +211,24 @@ public class StateFluxClient : MonoBehaviour
                     else if (message.MessageType == MessageTypeNames.GameInstanceStart)
                     {
                         GameInstanceStartMessage msg = (GameInstanceStartMessage)message;
-                        Debug.Log($"Game start message host is {msg.Host.Name}");
-                        Debug.Log($"Current player name is {client.CurrentPlayer.Name}");
-                        isHosting = (msg.Host.Name == client.CurrentPlayer.Name);
+                        Debug.Log($"Game start message, host is {msg.Host.Name}");
+                        Debug.Log($"Current player name is {connection.CurrentPlayer.Name}");
+                        isHosting = (msg.Host.Name == connection.CurrentPlayer.Name);
                         foreach (var listener in listeners) listener.OnStateFluxGameInstanceStart(msg);
+                    }
+                    else if (message.MessageType == MessageTypeNames.GameInstanceStopped)
+                    {
+                        GameInstanceStoppedMessage msg = (GameInstanceStoppedMessage)message;
+                        Debug.Log($"Game stopped message, host is {msg.Host.Name}");
+                        Debug.Log($"Current player name is {connection.CurrentPlayer.Name}");
+                        isHosting = (msg.Host.Name == connection.CurrentPlayer.Name);
+                        foreach (var listener in listeners) listener.OnStateFluxGameInstanceStopped(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.GameInstanceLeft)
                     {
                         GameInstanceLeftMessage msg = (GameInstanceLeftMessage)message;
                         Debug.Log($"Player {msg.Player.Name} left {msg.GameName}:{msg.InstanceName}");
-                        Debug.Log($"Current player name is {client.CurrentPlayer.Name}");
+                        Debug.Log($"Current player name is {connection.CurrentPlayer.Name}");
                         foreach (var listener in listeners) listener.OnStateFluxGameInstanceLeft(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.ChatSaid)

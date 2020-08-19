@@ -84,7 +84,7 @@ namespace StateFlux.Service
             }
         }
 
-        public GameInstance RemoveHostedGameInstance(Player hostPlayer)
+        public GameInstance RemoveGameInstance(Player hostPlayer)
         {
             bool removed = false;
 
@@ -98,7 +98,7 @@ namespace StateFlux.Service
             return null;
         }
 
-        private GameInstance LookupInstance(Guid id)
+        public GameInstance LookupInstance(Guid id)
         {
             foreach (var game in Games)
             {

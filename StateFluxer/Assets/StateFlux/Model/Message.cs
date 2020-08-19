@@ -224,6 +224,17 @@ namespace StateFlux.Model
         public Player Host { get; set; }
     }
 
+    public class GameInstanceStoppedMessage : Message
+    {
+        public GameInstanceStoppedMessage()
+        {
+            MessageType = MessageTypeNames.GameInstanceStopped;
+        }
+
+        public GameInstanceRef GameInstance { get; set; }
+        public Player Host { get; set; }
+    }
+
     public class ServerErrorMessage : Message
     {
         public ServerErrorMessage()

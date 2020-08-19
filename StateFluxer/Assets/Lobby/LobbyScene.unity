@@ -556,12 +556,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09223528a749553428fa068e7baae502, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  login: {fileID: 2070603364}
-  lobby: {fileID: 449119922}
   playerRowPrefab: {fileID: 4995591656556085334, guid: 99ba9e890275c8c4eb70f7d8c7f32ac4,
     type: 3}
   gameRowPrefab: {fileID: 4995591656556085334, guid: 99ba9e890275c8c4eb70f7d8c7f32ac4,
     type: 3}
+  login: {fileID: 2070603364}
+  lobby: {fileID: 449119922}
   Initialized: 0
 --- !u!4 &139182750
 Transform:

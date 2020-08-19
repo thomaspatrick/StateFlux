@@ -215,7 +215,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2a1b3e5e5682404a8d8dc5b4718b246, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mousePointerPrefab: {fileID: 6687853961356896103, guid: b3f0ba52178843945829110857e0e768,
+  mousePointerPrefab: {fileID: 6687853961356896103, guid: a18350d4449bae443b550ee8fb8c9940,
+    type: 3}
+  fizzlePrefab: {fileID: 9049758107008295886, guid: 0e9081808c8c7ee428c349df3d0bc942,
     type: 3}
 --- !u!1 &1834686888
 GameObject:

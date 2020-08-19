@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace StateFlux.Client
 {
-    public class Client
+    public class StateFluxConnection
     {
         private PlayerClientInfo _currentPlayer;
         private WebSocket _webSocket;
@@ -246,6 +246,10 @@ namespace StateFlux.Client
                 else if (responseMessage.MessageType == MessageTypeNames.GameInstanceStart)
                 {
                     mappedMessage = JsonConvert.DeserializeObject<GameInstanceStartMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.GameInstanceStopped)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<GameInstanceStoppedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.GameInstanceLeft)
                 {

@@ -33,10 +33,8 @@ namespace StateFlux.Model
 
         public GameInstanceState State { get; set; }
 
-        //[JsonIgnore]
         public List<Player> Players { get; set; }
 
-        //[JsonIgnore]
         public Player HostPlayer { get; set; }
 
         public GameInstance(Game game, string name)

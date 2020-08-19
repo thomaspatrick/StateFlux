@@ -16,6 +16,7 @@ namespace StateFlux.Client
         void OnStateFluxGameInstanceJoined(GameInstanceJoinedMessage message);
         void OnStateFluxGameInstanceListing(GameInstanceListingMessage message);
         void OnStateFluxGameInstanceStart(GameInstanceStartMessage message);
+        void OnStateFluxGameInstanceStopped(GameInstanceStoppedMessage message);
         void OnStateFluxGameInstanceLeft(GameInstanceLeftMessage message);
         void OnStateFluxChatSaid(ChatSaidMessage message);
         void OnStateFluxOtherMessage(Message message);

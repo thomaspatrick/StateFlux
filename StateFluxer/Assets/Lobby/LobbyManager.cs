@@ -27,113 +27,122 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         else
         {
             _instance = this;
-            DontDestroyOnLoad(this.gameObject);
+            //DontDestroyOnLoad(this.gameObject);
             StartCoroutine(Initialize());
         }
     }
     // --- -------- ---
 
-    public GameObject login;
-    public GameObject lobby;
     public GameObject playerRowPrefab;
     public GameObject gameRowPrefab;
+    public GameObject login;
+    public GameObject lobby;
 
-    private List<Player> players;
-    private List<GameInstance> games;
-    private List<ChatSaidMessage> said;
-    private string lastUsernameSaveFile;
-    private GameObject userNameInputField;
-    private GameObject userNameInputText;
-    private GameObject userNameInputPlaceholder;
-    private GameObject chatField;
-    private GameObject chatScrollView;
-    private GameObject newGamePanel;
-    private GameObject errorPanel;
-    private GameObject modalBackgroundPanel;
-    private GameObject debugPanel;
-    private GameInstance maybeJoinThisGameInstance;
-    private GameObject currentShowingPanel;
-    private bool hostingGame;
+    [HideInInspector]
+    public bool Initialized;
+    private List<Player> _players;
+    private List<GameInstance> _games;
+    private List<ChatSaidMessage> _said;
+    private string _lastUsernameSaveFile;
+    private GameObject _userNameInputField;
+    private GameObject _userNameInputText;
+    private GameObject _userNameInputPlaceholder;
+    private GameObject _chatField;
+    private GameObject _chatScrollView;
+    private GameObject _newGamePanel;
+    private GameObject _errorPanel;
+    private GameObject _modalBackgroundPanel;
+    private GameObject _debugPanel;
+    private GameObject _playersListView;
+    private GameObject _gameInstanceListView;
+    private GameObject _joinGamePanel;
+    private GameObject _joinGamePanelText;
+    private GameObject _leaveGamePanel;
+    private GameObject _leaveGamePanelText;
+    private GameObject _gamesPanelContent;
+    private GameObject _playersPanelContent;
+    private GameObject _loginButton;
+    private GameInstance _maybeJoinThisGameInstance;
+    private GameObject _currentShowingPanel;
+    private bool _hostingGame;
 
     public string LastUsername
     {
         get 
         {
             string tmp = null;
-            if (File.Exists(lastUsernameSaveFile))
+            if (File.Exists(_lastUsernameSaveFile))
             {
-                tmp = File.ReadAllText(lastUsernameSaveFile);
-                DebugLog($"read '{tmp}' from {lastUsernameSaveFile}");
+                tmp = File.ReadAllText(_lastUsernameSaveFile);
+                DebugLog($"read '{tmp}' from {_lastUsernameSaveFile}");
             }
             else
             {
-                DebugLog($"{lastUsernameSaveFile} does not exist");
+                DebugLog($"{_lastUsernameSaveFile} does not exist");
             }
             return tmp;
         }
         set
         {
-            DebugLog($"write '{value}' to {lastUsernameSaveFile}");
-            File.WriteAllText(lastUsernameSaveFile, value);
+            DebugLog($"write '{value}' to {_lastUsernameSaveFile}");
+            File.WriteAllText(_lastUsernameSaveFile, value);
         }
     }
 
-
-    [HideInInspector]
-    public bool Initialized;
     public IEnumerator Initialize()
     {
         yield return new WaitForEndOfFrame();
-        players = new List<Player>();
-        games = new List<GameInstance>();
-        said = new List<ChatSaidMessage>();
-        userNameInputField = GameObject.Find("InputField");
-        userNameInputText = GameObject.Find("InputField/Text");
-        userNameInputPlaceholder = GameObject.Find("InputField/Placeholder");
-        lastUsernameSaveFile = Application.persistentDataPath;
-        if(Application.isEditor)
-            lastUsernameSaveFile += "/lastUsername-editor.txt";
-        else
-        {
-            lastUsernameSaveFile += "/lastUsername.txt";
-        }
-
-        chatScrollView = GameObject.Find("Chat/Scroll View");
-        chatField = GameObject.Find("Content/Text");
-        newGamePanel = GameObject.Find("New Game Panel");
-        errorPanel = GameObject.Find("ErrorPanel");
-        modalBackgroundPanel = GameObject.Find("ModalBackdrop");
-        debugPanel = GameObject.Find("DebugPanel");
+        _players = new List<Player>();
+        _games = new List<GameInstance>();
+        _said = new List<ChatSaidMessage>();
+        _lastUsernameSaveFile = Application.persistentDataPath + (Application.isEditor ? "/lastUsername-editor.txt" : "/lastUsername.txt");
+        FindGameObjects();
+        SceneManager.activeSceneChanged += ChangedActiveScene;
 
         StateFluxClient.Instance.AddListener(this);
         StateFluxClient.Instance.Initialize();
 
-        if (StateFluxClient.Instance.hasSavedSession)
-        {
-            StartCoroutine(ActivateLobbyPanel());
-        }
-        else
-        {
-            StartCoroutine(ActivateLoginPanel());
-        }
+        StartCoroutine(StateFluxClient.Instance.hasSavedSession ? ActivateLobbyPanel() : ActivateLoginPanel());
         Initialized = true;
+    }
+
+    private void ChangedActiveScene(Scene current, Scene next)
+    {
+        DebugLog($"Changed scene from {current.name} to {next.name}");
+    }
+
+    private void FindGameObjects()
+    {
+        _userNameInputField = GameObject.Find("InputField");
+        _userNameInputText = GameObject.Find("InputField/Text");
+        _userNameInputPlaceholder = GameObject.Find("InputField/Placeholder");
+        _chatScrollView = GameObject.Find("Chat/Scroll View");
+        _chatField = GameObject.Find("Content/Text");
+        _newGamePanel = GameObject.Find("New Game Panel");
+        _errorPanel = GameObject.Find("ErrorPanel");
+        _modalBackgroundPanel = GameObject.Find("ModalBackdrop");
+        _joinGamePanel = GameObject.Find("Join Game Panel");
+        _joinGamePanelText = GameObject.Find("Join Game Panel/Text");
+        _leaveGamePanel = GameObject.Find("Leave Game Panel");
+        _leaveGamePanelText = GameObject.Find("Leave Game Panel/Text");
+        _gamesPanelContent = GameObject.Find("Lobby Panel/GamesPanel/Games/Scroll View/Viewport/Content");
+        _playersPanelContent = GameObject.Find("Lobby Panel/PlayersPanel/Players/Scroll View/Viewport/Content");
+        _debugPanel = GameObject.Find("DebugPanel");
+        _playersListView = GameObject.Find("Lobby Panel/PlayersPanel/Players/Scroll View/Viewport/Content");
+        _gameInstanceListView = GameObject.Find("Lobby Panel/GamesPanel/Games/Scroll View/Viewport/Content");
+        _loginButton = GameObject.Find("LoginButton");
     }
 
     public void Update()
     {
-        if (Initialized && userNameInputField != null && Input.GetKey(KeyCode.Return))
+        if (Initialized && _userNameInputField != null && Input.GetKey(KeyCode.Return))
         {
-            var field = userNameInputField.GetComponent<InputField>();
+            var field = _userNameInputField.GetComponent<InputField>();
             if (field.isFocused && field.text != "")
             {
                 OnClickToConnect();
             }
         }
-    }
-
-    IEnumerator PollLists()
-    {
-        yield return new WaitForSeconds(1);
     }
 
     // ------------------------------------
@@ -142,37 +151,30 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     IEnumerator ActivateLobbyPanel()
     {
         yield return null;
-        ShowPanel(lobby, modalBackgroundPanel, true);
-        ShowPanel(login, modalBackgroundPanel, false);
+        ShowPanel(lobby, _modalBackgroundPanel, true);
+        ShowPanel(login, _modalBackgroundPanel, false);
     }
 
     IEnumerator ActivateLoginPanel()
     {
         yield return null;
-        ShowPanel(lobby, modalBackgroundPanel, false);
+        ShowPanel(lobby, _modalBackgroundPanel, false);
         ShowPanel(login, null, true);
-        var field = userNameInputField.GetComponent<InputField>();
+        var field = _userNameInputField.GetComponent<InputField>();
         if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
         else
         {
             LastUsername = Guid.NewGuid().ToString();
             field.text = LastUsername;
         }
-        EventSystem.current.SetSelectedGameObject(userNameInputField);
+        EventSystem.current.SetSelectedGameObject(_userNameInputField);
         field.ActivateInputField();
     }
 
     void ShowPanel(GameObject obj, GameObject backdrop, bool show)
     {
         DebugLog($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
-        if(show)
-        {
-            currentShowingPanel = obj;
-        }
-        else
-        {
-            currentShowingPanel = null;
-        }
+        _currentShowingPanel = show ? obj : null;
 
         var canvasGroup = obj.GetComponent<CanvasGroup>();
         if(canvasGroup != null)
@@ -196,18 +198,16 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     private void ClearPlayerListView()
     {
-        GameObject content = GameObject.Find("Lobby Panel/PlayersPanel/Players/Scroll View/Viewport/Content");
-        players.Clear();
-        if (content == null) return;
-        foreach (Transform child in content.transform) GameObject.Destroy(child.gameObject);
+        _players.Clear();
+        if (_playersListView == null) return;
+        foreach (Transform child in _playersListView.transform) GameObject.Destroy(child.gameObject);
     }
 
     private void ClearGameInstanceListView()
     {
-        GameObject content = GameObject.Find("Lobby Panel/GamesPanel/Games/Scroll View/Viewport/Content");
-        games.Clear();
-        if (content == null) return;
-        foreach (Transform child in content.transform) GameObject.Destroy(child.gameObject);
+        _games.Clear();
+        if (_gameInstanceListView == null) return;
+        foreach (Transform child in _gameInstanceListView.transform) GameObject.Destroy(child.gameObject);
     }
 
 
@@ -223,14 +223,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickToCreateGame()
     {
-        ShowPanel(newGamePanel, modalBackgroundPanel, true);
-        GameObject.Find("New Game Panel");
+        ShowPanel(_newGamePanel, _modalBackgroundPanel, true);
     }
 
     public void OnClickConfirmCreateGame()
     {
-        ShowPanel(newGamePanel, modalBackgroundPanel, false);
-        InputField inputField = newGamePanel.GetComponentInChildren<InputField>();
+        ShowPanel(_newGamePanel, _modalBackgroundPanel, false);
+        InputField inputField = _newGamePanel.GetComponentInChildren<InputField>();
         var message = new CreateGameInstanceMessage
         {
             GameName = "AssetCollapse",
@@ -257,24 +256,24 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnUsernameChanged(string newValue)
     {
-        GameObject.Find("LoginButton").GetComponent<Button>().interactable = !string.IsNullOrEmpty(newValue);
+        _loginButton.GetComponent<Button>().interactable = !string.IsNullOrEmpty(newValue);
     }
 
     public void OnClickedModalBackdrop()
     {
         DebugLog("clicked modal backdrop!");
-        if(currentShowingPanel)
+        if(_currentShowingPanel)
         {
-            if(currentShowingPanel.name != "Login Panel")
-                ShowPanel(currentShowingPanel, modalBackgroundPanel, false);
+            if(_currentShowingPanel.name != "Login Panel")
+                ShowPanel(_currentShowingPanel, _modalBackgroundPanel, false);
         }
     }
 
     public string GetLoginUsername()
     {
-        string placeholderText = userNameInputPlaceholder.GetComponent<Text>().text;
+        string placeholderText = _userNameInputPlaceholder.GetComponent<Text>().text;
         DebugLog($"PlaceholderText = {placeholderText}");
-        string userNameText = userNameInputText.GetComponent<Text>().text;
+        string userNameText = _userNameInputText.GetComponent<Text>().text;
         DebugLog($"UserNameText = {userNameText}");
         return (userNameText == placeholderText) ? null : userNameText;
     }
@@ -296,7 +295,6 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         DebugLog("OnStateFluxConnect!");
         StartCoroutine(ActivateLobbyPanel());
-        StartCoroutine(PollLists()); // remove this later, now pushing from server instead of polling
         StateFluxClient.Instance.SendRequest(new PlayerListMessage());
         StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
     }
@@ -304,7 +302,6 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxDisconnect()
     {
         DebugLog("OnStateFluxDisconnect!");
-        StopCoroutine(PollLists());
     }
 
     public void OnStateFluxHostStateChanged(HostStateChangedMessage message)
@@ -318,12 +315,11 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxPlayerListing(PlayerListingMessage message)
     {
         ClearPlayerListView();
-        GameObject content = GameObject.Find("Lobby Panel/PlayersPanel/Players/Scroll View/Viewport/Content");
-        if (content == null) return;
+        if (_playersPanelContent == null) return;
         foreach (Player p in message.Players)
         {
-            players.Add(p);
-            GameObject row = GameObject.Instantiate(playerRowPrefab, content.transform);
+            _players.Add(p);
+            GameObject row = GameObject.Instantiate(playerRowPrefab, _playersPanelContent.transform);
             var textMeshPro = row.GetComponentInChildren<TextMeshProUGUI>();
             textMeshPro.text = p.Name;
 
@@ -332,12 +328,12 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxChatSaid(ChatSaidMessage message)
     {
-        said.Add(message);
+        _said.Add(message);
         string userName = StateFluxClient.Instance.userName;
-        var chatText = chatField.GetComponent<TextMeshProUGUI>();
+        var chatText = _chatField.GetComponent<TextMeshProUGUI>();
         StringBuilder builder = new StringBuilder();
         builder.Append("<color=#339933>");
-        foreach (var msg in said)
+        foreach (var msg in _said)
         {
             if(msg.PlayerName == userName)
             {
@@ -351,7 +347,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         }
         builder.Append("</color>");
         chatText.SetText(builder.ToString());
-        chatScrollView.GetComponent<ScrollRect>().normalizedPosition = new Vector2(0, 0); // scroll to bottom
+        _chatScrollView.GetComponent<ScrollRect>().normalizedPosition = new Vector2(0, 0); // scroll to bottom
     }
 
     public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
@@ -361,7 +357,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         if (message.GameInstance.HostPlayer.Name == LastUsername)
         {
             DebugLog($"Current user is hosting a game!");
-            hostingGame = true;
+            _hostingGame = true;
         }
     }
     public void OnStateFluxGameInstanceLeft(GameInstanceLeftMessage message)
@@ -372,8 +368,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceListing(GameInstanceListingMessage message)
     {
         ClearGameInstanceListView();
-        GameObject content = GameObject.Find("Lobby Panel/GamesPanel/Games/Scroll View/Viewport/Content");
-        if (content == null) return;
+        if (_gamesPanelContent == null) return;
         foreach (GameInstance g in message.GameInstances)
         {
             bool first = true;
@@ -394,8 +389,8 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
                     builder.Append("</i>");
                 }
             }
-            games.Add(g);
-            GameObject row = GameObject.Instantiate(gameRowPrefab, content.transform);
+            _games.Add(g);
+            GameObject row = GameObject.Instantiate(gameRowPrefab, _gamesPanelContent.transform);
             var button = row.GetComponent<Button>();
             button.name = "GameInstance." + g.Id;
             button.onClick.AddListener(delegate { OnClickGameInstance(button.name); });
@@ -416,49 +411,44 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickGameInstance(string buttonName)
     {
-        if(!hostingGame)
+        if(!_hostingGame)
         {
             string[] parts = buttonName.Split(new char[] { '.' });
             string gameInstanceId = parts[1];
-            GameInstance gameInstance = games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
-            var joinGamePanel = GameObject.Find("Join Game Panel");
-            var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
+            GameInstance gameInstance = _games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
+            var canvasGroup = _joinGamePanel.GetComponent<CanvasGroup>();
             canvasGroup.alpha = 1;
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
-            var textPanel = GameObject.Find("Join Game Panel/Text");
-            var txt = textPanel.GetComponent<Text>();
+            var txt = _joinGamePanelText.GetComponent<Text>();
             txt.text = $"Join {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
-            maybeJoinThisGameInstance = gameInstance;
+            _maybeJoinThisGameInstance = gameInstance;
         }
         else
         {
             string[] parts = buttonName.Split(new char[] { '.' });
             string gameInstanceId = parts[1];
-            GameInstance gameInstance = games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
-            var leaveGamePanel = GameObject.Find("Leave Game Panel");
-            var canvasGroup = leaveGamePanel.GetComponent<CanvasGroup>();
+            GameInstance gameInstance = _games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
+            var canvasGroup = _leaveGamePanel.GetComponent<CanvasGroup>();
             canvasGroup.alpha = 1;
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
-            var textPanel = GameObject.Find("Leave Game Panel/Text");
-            var txt = textPanel.GetComponent<Text>();
+            var txt = _leaveGamePanelText.GetComponent<Text>();
             txt.text = $"Leave {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
-            maybeJoinThisGameInstance = gameInstance;
+            _maybeJoinThisGameInstance = gameInstance;
         }
     }
 
     public void OnClickJoinGame()
     {
-        if(!this.hostingGame)
+        if(!_hostingGame)
         {
-            var joinGamePanel = GameObject.Find("Join Game Panel");
-            var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
+            var canvasGroup = _joinGamePanel.GetComponent<CanvasGroup>();
             canvasGroup.alpha = 0;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
-            DebugLog($"Requested join game instance {maybeJoinThisGameInstance.Name}");
-            StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
+            DebugLog($"Requested join game instance {_maybeJoinThisGameInstance.Name}");
+            StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = _maybeJoinThisGameInstance.Game.Name, InstanceName = _maybeJoinThisGameInstance.Name });
         }
         else
         {
@@ -469,8 +459,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickDismissJoinGame()
     {
-        var joinGamePanel = GameObject.Find("Join Game Panel");
-        var canvasGroup = joinGamePanel.GetComponent<CanvasGroup>();
+        var canvasGroup = _joinGamePanel.GetComponent<CanvasGroup>();
         canvasGroup.alpha = 0;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
@@ -478,13 +467,12 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickLeaveGame()
     {
-        StateFluxClient.Instance.SendRequest(new LeaveGameInstanceMessage { GameName = maybeJoinThisGameInstance.Game.Name, InstanceName = maybeJoinThisGameInstance.Name });
+        StateFluxClient.Instance.SendRequest(new LeaveGameInstanceMessage { GameName = _maybeJoinThisGameInstance.Game.Name, InstanceName = _maybeJoinThisGameInstance.Name });
         OnClickDismissLeaveGame();
     }
     public void OnClickDismissLeaveGame()
     {
-        var leaveGamePanel = GameObject.Find("Leave Game Panel");
-        var canvasGroup = leaveGamePanel.GetComponent<CanvasGroup>();
+        var canvasGroup = _leaveGamePanel.GetComponent<CanvasGroup>();
         canvasGroup.alpha = 0;
         canvasGroup.interactable = false;
         canvasGroup.blocksRaycasts = false;
@@ -500,17 +488,21 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         DebugLog($"OnStateFluxServerError - {message.Error}!");
 
         StartCoroutine("ActivateLoginPanel");
-        errorPanel.SendMessage("OnStateFluxError", message.Error);
+        _errorPanel.SendMessage("OnStateFluxError", message.Error);
     }
 
     private void DebugLog(string msg)
     {
         Debug.Log(msg);
-        if(debugPanel)
+        if(_debugPanel)
         {
-            var textComponent = debugPanel.GetComponentInChildren<UnityEngine.UI.Text>();
+            var textComponent = _debugPanel.GetComponentInChildren<UnityEngine.UI.Text>();
             if (textComponent.text.Length > 1000) textComponent.text = textComponent.text.Substring(1000,textComponent.text.Length - 1000);
             textComponent.text = msg + "\n" + textComponent.text;
         }
+    }
+
+    public void OnStateFluxGameInstanceStopped(GameInstanceStoppedMessage message)
+    {
     }
 }

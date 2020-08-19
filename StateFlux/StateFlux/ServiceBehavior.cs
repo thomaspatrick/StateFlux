@@ -140,17 +140,15 @@ namespace StateFlux.Service
         {
             try
             {
-                Player currentPlayer = GetCurrentSessionPlayer();
                 string msg = JsonConvert.SerializeObject(message);
-                WebSocketSessionManager sessionManager = this.Sessions;
-                foreach (Player player in Server.Instance.Players)
+                Player toPlayer = Server.Instance.Players.FirstOrDefault(p => p.Id == playerId);
+                if (this.Sessions.TryGetSession(toPlayer.SessionData.WebsocketSessionId, out IWebSocketSession session))
                 {
-                    IWebSocketSession session;
-                    if (sessionManager.TryGetSession(player.SessionData.WebsocketSessionId, out session))
-                    {
-                        if (playerId == this.GetCurrentSessionPlayer().Id) continue;
-                        session.Context.WebSocket.Send(msg);
-                    }
+                    session.Context.WebSocket.Send(msg);
+                }
+                else
+                {
+                    LogMessage($"Attempted to send {message.MessageType} to {playerId}, who was not found.");
                 }
             }
             catch (Exception e)
@@ -224,13 +222,25 @@ namespace StateFlux.Service
                 LogMessage($"Connection closed");
 
                 IEnumerable<Player> players = Server.Instance.Players;
-                PlayerListingMessage playerListingMessage = new PlayerListingMessage
+
+                var playerListingMessage = new PlayerListingMessage
                 {
                     Players = Server.Instance.Players.Where(p => p.SessionData.SessionId != currentPlayer.SessionData.SessionId).ToList()
                 };
-
                 Broadcast(playerListingMessage, null, true);
-                Server.Instance.RemoveHostedGameInstance(currentPlayer);
+
+                if(currentPlayer.GameInstanceRef != null)
+                {
+                    // player is in a game instance!
+                    var gameInstanceStoppedMessage = new GameInstanceStoppedMessage
+                    {
+                        GameInstance = currentPlayer.GameInstanceRef,
+                        Host = Server.Instance.LookupInstance(currentPlayer.GameInstanceRef.Id).HostPlayer
+                    };
+                    Broadcast(gameInstanceStoppedMessage, null, true);
+                }
+
+                Server.Instance.RemoveGameInstance(currentPlayer);
                 Server.Instance.Players.Remove(currentPlayer);
             }
             finally
