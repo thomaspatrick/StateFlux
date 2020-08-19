@@ -8,6 +8,7 @@ using Random = UnityEngine.Random;
 using StateFlux.Model;
 using StateFlux.Client;
 using StateFlux.Unity;
+using Newtonsoft.Json;
 
 public class GameManager : MonoBehaviour, IStateFluxListener
 {
@@ -222,6 +223,7 @@ public class GameManager : MonoBehaviour, IStateFluxListener
                     };
                 }
 
+                //DebugLog($"Sending {JsonConvert.SerializeObject(message)}");
                 stateFluxClient.SendRequest(message);
             }
 
@@ -351,13 +353,13 @@ public class GameManager : MonoBehaviour, IStateFluxListener
             {
                 if (!found)
                 {
-                    DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)");
+                    DebugLog($"Guest has asked us to update object {change.ObjectID} but it does not exist. (Skipping)");
                     continue;
                 }
 
                 if(tracker.gameObject == null) // unity supposedly overrides the behavior of == to return null for destroyed objects, even if they haven't been c# deleted yet
                 {
-                    DebugLog($"Host has asked us to update object {change.ObjectID} but it has already been destroyed. (Skipping)");
+                    DebugLog($"Guest has asked us to update object {change.ObjectID} but it has already been destroyed. (Skipping)");
                     continue;
                 }
 
@@ -405,21 +407,30 @@ public class GameManager : MonoBehaviour, IStateFluxListener
     {
         if(trackingMap.TryGetValue(name, out ChangeTracker tracker))
         {
-            tracker.change.Event = ChangeEvent.Updated;
-            tracker.change.Transform.Pos = pos.Convert2d();
-            tracker.change.Transform.Vel = vel.Convert2d();
-            changeQueue.Enqueue(tracker.change);
+            // don't send guest state changes to the host for objects controlled by the host
+            // (send guest state changes about the mouse to the host)
+            bool controlledByHost = (!stateFluxClient.isHosting && tracker.change.ObjectID != this.id);
+            if(!controlledByHost)
+            {
+                tracker.change.Event = ChangeEvent.Updated;
+                tracker.change.Transform.Pos = pos.Convert2d();
+                tracker.change.Transform.Vel = vel.Convert2d();
+                changeQueue.Enqueue(tracker.change);
+            }
         }
     }
 
     public void OnTrackedObjectDestroy(string name)
     {
-        DebugLog($"OnTrackedObjectDestroy '{name}'");
         if (trackingMap.TryGetValue(name, out ChangeTracker tracker))
         {
             tracker.change.Event = ChangeEvent.Destroyed;
             changeQueue.Enqueue(tracker.change);
-            DebugLog($"OnTrackedObjectDestroy, created destroy change for '{name}'");
+            DebugLog($"OnTrackedObjectDestroy, queued destroy change for '{name}'");
+        }
+        else
+        {
+            DebugLog($"OnTrackedObjectDestroy, failed to look up tracking map for '{name}'");
         }
     }
 
