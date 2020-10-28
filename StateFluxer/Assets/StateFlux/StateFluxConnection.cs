@@ -180,7 +180,7 @@ namespace StateFlux.Client
                     if (_requests.TryDequeue(out Message message))
                     {
                         string serializedMessage = JsonConvert.SerializeObject(message);
-                        if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestStateChange)
+                        if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestInputChange)
                         {
                             Log($"Sending message to server '{serializedMessage}'"); // enable for debug only
                         }
@@ -264,10 +264,10 @@ namespace StateFlux.Client
                     //Debug.Log($"Receiving HostStateChanged: {msgTxt}");
                     mappedMessage = JsonConvert.DeserializeObject<HostStateChangedMessage>(msgTxt);
                 }
-                else if (responseMessage.MessageType == MessageTypeNames.GuestStateChanged)
+                else if (responseMessage.MessageType == MessageTypeNames.GuestInputChanged)
                 {
-                    //Debug.Log($"Receiving GuestStateChanged: {msgTxt}");
-                    mappedMessage = JsonConvert.DeserializeObject<GuestStateChangedMessage>(msgTxt);
+                    //Debug.Log($"Receiving GuestInputChanged: {msgTxt}");
+                    mappedMessage = JsonConvert.DeserializeObject<GuestInputChangedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.ServerError)
                 {

@@ -91,13 +91,13 @@ namespace StateFlux.Model
         public StateChange Payload { get; set; }
     }
 
-    public class GuestStateChangeMessage : Message
+    public class GuestInputChangeMessage : Message
     {
-        public GuestStateChangeMessage()
+        public GuestInputChangeMessage()
         {
-            MessageType = MessageTypeNames.GuestStateChange;
+            MessageType = MessageTypeNames.GuestInputChange;
         }
-        public StateChange Payload { get; set; }
+        public GuestInput Payload { get; set; }
     }
 
     public class HostStateChangedMessage : Message
@@ -111,15 +111,15 @@ namespace StateFlux.Model
     }
 
     // server 
-    public class GuestStateChangedMessage : Message
+    public class GuestInputChangedMessage : Message
     {
-        public GuestStateChangedMessage()
+        public GuestInputChangedMessage()
         {
-            MessageType = MessageTypeNames.GuestStateChanged;
+            MessageType = MessageTypeNames.GuestInputChanged;
         }
 
         public Guid Guest { get; set; }
-        public StateChange Payload { get; set; }
+        public GuestInput Payload { get; set; }
     }
 
     public class GuestRequestFullStateMessage : Message

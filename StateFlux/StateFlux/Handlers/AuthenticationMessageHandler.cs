@@ -38,11 +38,11 @@ namespace StateFlux.Service
 
             if(player == null)
             {
-                if(Server.Instance.Players.Any(p => p.Name == message.PlayerName))
+                Player prev = Server.Instance.Players.FirstOrDefault(p => p.Name == message.PlayerName);
+                if(prev != null)
                 {
-                    response.Status = AuthenticationStatus.BadUser;
-                    _websocket.LogMessage($"Player failed authenticate: matching name in DB, but with a different session id");
-                    return response;
+                    _websocket.LogMessage($"Found existing player matching name {message.PlayerName}, removing...");
+                    Server.Instance.Players.Remove(prev);
                 }
                 player = _websocket.CreatePlayerSession(message.PlayerName.Truncate(MaxPlayerNameLen));
             }

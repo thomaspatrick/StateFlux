@@ -183,10 +183,10 @@ public class StateFluxClient : MonoBehaviour
                         // FIXME: convert all the others to linq method ForEach
                         listeners.ForEach(l => l.OnStateFluxHostStateChanged((HostStateChangedMessage)message));
                     }
-                    else if (message.MessageType == MessageTypeNames.GuestStateChanged)
+                    else if (message.MessageType == MessageTypeNames.GuestInputChanged)
                     {
-                        GuestStateChangedMessage msg = (GuestStateChangedMessage)message;
-                        foreach (var listener in listeners) listener.OnStateFluxGuestStateChanged(msg);
+                        GuestInputChangedMessage msg = (GuestInputChangedMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxGuestInputChanged(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.PlayerListing)
                     {

@@ -15,7 +15,6 @@ namespace StateFlux.Service
             Player currentPlayer = _websocket.GetCurrentSessionPlayer();
             Assert.ThrowIfNull(currentPlayer, "requires a user session", _websocket);
 
-            GameInstance gameInstance = _websocket.FindPlayerGameInstance(currentPlayer);
             var outgoingMessage = new HostStateChangedMessage
             {
                 Payload = message.Payload
@@ -26,14 +25,14 @@ namespace StateFlux.Service
             return null;
         }
 
-        public Message GuestStateChange(GuestStateChangeMessage message)
+        public Message GuestStateChange(GuestInputChangeMessage message)
         {
             Player currentPlayer = _websocket.GetCurrentSessionPlayer();
             Assert.ThrowIfNull(currentPlayer, "requires a user session", _websocket);
 
             GameInstance gameInstance = _websocket.FindPlayerGameInstance(currentPlayer);
 
-            var outgoingMessage = new GuestStateChangedMessage
+            var outgoingMessage = new GuestInputChangedMessage
             {
                 Guest = currentPlayer.Id,
                 Payload = message.Payload

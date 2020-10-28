@@ -36,12 +36,12 @@ namespace StateFlux.Model
 
         // state request messages
         public static string HostStateChange = "HostStateChange";
-        public static string GuestStateChange = "GuestStateChange";
+        public static string GuestInputChange = "GuestInputChange";
         public static string GuestRequestFullState = "GuestRequestFullState";
 
         // state broadcast response messages
         public static string HostStateChanged = "HostStateChanged";
-        public static string GuestStateChanged = "GuestStateChanged";
+        public static string GuestInputChanged = "GuestInputChanged";
 
         // error message
         public static string ServerError = "ServerError";

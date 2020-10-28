@@ -308,7 +308,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
     }
 
-    public void OnStateFluxGuestStateChanged(GuestStateChangedMessage message)
+    public void OnStateFluxGuestInputChanged(GuestInputChangedMessage message)
     {
     }
 
@@ -487,7 +487,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         DebugLog($"OnStateFluxServerError - {message.Error}!");
 
-        StartCoroutine("ActivateLoginPanel");
+        StartCoroutine(nameof(ActivateLoginPanel));
         _errorPanel.SendMessage("OnStateFluxError", message.Error);
     }
 

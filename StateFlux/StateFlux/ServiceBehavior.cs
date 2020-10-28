@@ -261,7 +261,7 @@ namespace StateFlux.Service
 
                 Player player = this.GetCurrentSessionPlayer();
                 string pname = (player != null) ? player.Name : "unknown";
-                if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestStateChange)
+                if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestInputChange)
                 {
                     LogMessage($"OnMessage.Processing {message.MessageType} from {pname}");
                 }
@@ -270,7 +270,7 @@ namespace StateFlux.Service
                 {
                     Respond(responseMessage);
                 }
-                if(message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestStateChange)
+                if(message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestInputChange)
                 {
                     LogMessage($"OnMessage.Processed {message.MessageType} from {pname}");
                 }
