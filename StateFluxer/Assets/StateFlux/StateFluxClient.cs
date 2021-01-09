@@ -14,7 +14,7 @@ public class StateFluxClient : MonoBehaviour
     public static StateFluxClient Instance {
         get 
         {
-            if (_instance == null) throw new Exception("StateFluxClient accessed before ready");
+            //if (_instance == null) throw new Exception("StateFluxClient accessed before ready");
             return _instance; 
         } 
     }

@@ -20,6 +20,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     private void Awake()
     {
+
+        if (StateFluxClient.Instance == null)
+        {
+            SceneManager.LoadScene("_preload");
+            return;
+        }
+
         if (_instance != null && _instance != this)
         {
             Destroy(this.gameObject);
@@ -164,7 +171,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
         else
         {
-            LastUsername = Guid.NewGuid().ToString();
+            LastUsername = "NameError" + new System.Random().Next();
             field.text = LastUsername;
         }
         EventSystem.current.SetSelectedGameObject(_userNameInputField);
@@ -209,6 +216,11 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         if (_gameInstanceListView == null) return;
         foreach (Transform child in _gameInstanceListView.transform) GameObject.Destroy(child.gameObject);
     }
+    private void ClearChatListView()
+    {
+        _said.Clear();
+        _chatField.GetComponent<TextMeshProUGUI>().text = "";
+    }
 
 
     // --------------------------------------------------
@@ -242,8 +254,10 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnClickToLogout()
     {
         DebugLog($"LobbyManager.OnClickToLogout");
+
         StateFluxClient.Instance.Logout();
         ClearPlayerListView();
+        ClearChatListView();
         ClearGameInstanceListView();
         StartCoroutine(ActivateLoginPanel());
     }
@@ -406,7 +420,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceStart(GameInstanceStartMessage message)
     {
         DebugLog("OnStateFluxGameInstanceStart!");
-        SceneManager.LoadScene("PlaceholderGame");
+        if (message.GameInstance.GameName == "AssetCollapse")
+            SceneManager.LoadScene("PlaceholderGame");
+        else
+        {
+
+        }
+        SceneManager.LoadScene("DemoTile");
     }
 
     public void OnClickGameInstance(string buttonName)

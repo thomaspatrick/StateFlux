@@ -7,7 +7,8 @@ namespace StateFlux.Unity
     {
         public static Vec2d Convert3d(this Vector3 vec)
         {
-            return new Vec2d { X = vec.x, Y = vec.y };
+            vec = Camera.main.ScreenToWorldPoint(vec);
+            return new Vec2d { X =vec.x, Y = vec.y };
         }
         public static Vec2d Convert2d(this UnityEngine.Vector3 vec)
         {

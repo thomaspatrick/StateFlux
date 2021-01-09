@@ -96,7 +96,7 @@ namespace StateFlux.Service.Handlers
             Assert.ThrowIfNull(game, $"game {game.Name} not found", _websocket);
 
             var gameInstance = game.Instances.FirstOrDefault(g => g.Name == message.InstanceName);
-            Assert.ThrowIfNull(gameInstance, $"game instance {game.Name}:{gameInstance.Name} not found", _websocket);
+            Assert.ThrowIfNull(gameInstance, $"game instance {game.Name}:{message.InstanceName} not found", _websocket);
             if (gameInstance != null)
             {
                 Server.Instance.LeaveGameInstance(gameInstance, _websocket.GetCurrentSessionPlayer());

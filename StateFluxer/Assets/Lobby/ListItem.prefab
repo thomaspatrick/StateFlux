@@ -91,7 +91,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 44.75
+  m_fontSize: 18
   m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -108,7 +108,7 @@ MonoBehaviour:
   m_enableWordWrapping: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 3
-  m_firstOverflowCharacterIndex: -1
+  m_firstOverflowCharacterIndex: 0
   m_linkedTextComponent: {fileID: 0}
   m_isLinkedTextComponent: 0
   m_isTextTruncated: 0
@@ -132,13 +132,13 @@ MonoBehaviour:
   m_margin: {x: 50, y: 50, z: 50, w: 50}
   m_textInfo:
     textComponent: {fileID: 4995591656093977820}
-    characterCount: 14
+    characterCount: 0
     spriteCount: 0
-    spaceCount: 2
-    wordCount: 3
+    spaceCount: 0
+    wordCount: 0
     linkCount: 0
-    lineCount: 1
-    pageCount: 1
+    lineCount: 0
+    pageCount: 0
     materialCount: 1
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
@@ -169,7 +169,7 @@ GameObject:
   - component: {fileID: 4995591656556085339}
   - component: {fileID: 4995591656556085336}
   m_Layer: 5
-  m_Name: PlayerListItem
+  m_Name: ListItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -184,7 +184,7 @@ RectTransform:
   m_GameObject: {fileID: 4995591656556085334}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_Children:
   - {fileID: 4995591656093977821}
   m_Father: {fileID: 0}
@@ -221,7 +221,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1af4e61c75ec7d64e9f29fdbcf7f48d5, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 740be6023576ca74082c748fd5b9c80c, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

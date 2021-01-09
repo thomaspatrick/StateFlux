@@ -504,6 +504,7 @@ public class GameManager : MonoBehaviour, IStateFluxListener
 
     static private Vector3 GetMousePoint()
     {
+
         Vector3 point = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         point.z = 0;
         return point;

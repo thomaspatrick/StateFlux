@@ -118,7 +118,7 @@ namespace StateFlux.Service
                 foreach (Player player in Server.Instance.Players)
                 {
                     GameInstance playerGameInstance = FindPlayerGameInstance(player);
-                    if (gameInstanceRef == null || gameInstanceRef.Id == playerGameInstance.Id)
+                    if (gameInstanceRef == null || (playerGameInstance != null && gameInstanceRef.Id == playerGameInstance.Id))
                     {
                         IWebSocketSession session;
                         if (sessionManager.TryGetSession(player.SessionData.WebsocketSessionId, out session))
