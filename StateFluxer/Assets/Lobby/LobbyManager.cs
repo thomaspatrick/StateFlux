@@ -44,6 +44,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public GameObject gameRowPrefab;
     public GameObject login;
     public GameObject lobby;
+    public GameObject connection;
 
     [HideInInspector]
     public bool Initialized;
@@ -81,7 +82,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             if (File.Exists(_lastUsernameSaveFile))
             {
                 tmp = File.ReadAllText(_lastUsernameSaveFile);
-                DebugLog($"read '{tmp}' from {_lastUsernameSaveFile}");
+                //DebugLog($"read '{tmp}' from {_lastUsernameSaveFile}");
             }
             else
             {
@@ -155,6 +156,18 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     // ------------------------------------
     // controlling the ui
 
+    IEnumerator ActivateConnectionPanel()
+    {
+        yield return null;
+        ShowPanel(connection, _modalBackgroundPanel, true);
+    }
+
+    IEnumerator HideConnectionPanel()
+    {
+        yield return null;
+        ShowPanel(connection, _modalBackgroundPanel, false);
+    }
+
     IEnumerator ActivateLobbyPanel()
     {
         yield return null;
@@ -166,6 +179,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         yield return null;
         ShowPanel(lobby, _modalBackgroundPanel, false);
+        ShowPanel(connection, _modalBackgroundPanel, false);
         ShowPanel(login, null, true);
         var field = _userNameInputField.GetComponent<InputField>();
         if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
@@ -180,7 +194,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     void ShowPanel(GameObject obj, GameObject backdrop, bool show)
     {
-        DebugLog($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
+        //DebugLog($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
         _currentShowingPanel = show ? obj : null;
 
         var canvasGroup = obj.GetComponent<CanvasGroup>();
@@ -286,9 +300,9 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public string GetLoginUsername()
     {
         string placeholderText = _userNameInputPlaceholder.GetComponent<Text>().text;
-        DebugLog($"PlaceholderText = {placeholderText}");
+        //DebugLog($"PlaceholderText = {placeholderText}");
         string userNameText = _userNameInputText.GetComponent<Text>().text;
-        DebugLog($"UserNameText = {userNameText}");
+        //DebugLog($"UserNameText = {userNameText}");
         return (userNameText == placeholderText) ? null : userNameText;
     }
 
@@ -302,13 +316,15 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxWaitingToConnect()
     {
-        DebugLog("OnStateFluxWaitingToConnect");
+        //DebugLog("OnStateFluxWaitingToConnect");
+        StartCoroutine(ActivateConnectionPanel());
     }
 
     public void OnStateFluxConnect()
     {
         DebugLog("OnStateFluxConnect!");
         StartCoroutine(ActivateLobbyPanel());
+        StartCoroutine(HideConnectionPanel());
         StateFluxClient.Instance.SendRequest(new PlayerListMessage());
         StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
     }
@@ -316,6 +332,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxDisconnect()
     {
         DebugLog("OnStateFluxDisconnect!");
+        StartCoroutine(ActivateConnectionPanel());
     }
 
     public void OnStateFluxHostStateChanged(HostStateChangedMessage message)
@@ -366,11 +383,10 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
     {
-        DebugLog($"Server says {message.GameInstance.HostPlayer.Name} began hosting a new game instance: {message.GameInstance.Name}");
-        DebugLog($"I am {this.LastUsername}");
+        DebugLog($"Server says {message.GameInstance.HostPlayer.Name} began hosting a new game instance: {message.GameInstance.Name}.  (I am {this.LastUsername})");
         if (message.GameInstance.HostPlayer.Name == LastUsername)
         {
-            DebugLog($"Current user is hosting a game!");
+            DebugLog($"Current user is hosting a game");
             _hostingGame = true;
         }
     }

@@ -14,6 +14,7 @@ namespace StateFlux.Model
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public Color Color { get; set; }
         public int Icon { get; set; }
         public int Score { get; set; }
         public bool[] Bval { get; set; }

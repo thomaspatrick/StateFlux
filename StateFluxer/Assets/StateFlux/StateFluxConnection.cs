@@ -14,6 +14,16 @@ using UnityEngine;
 
 namespace StateFlux.Client
 {
+    public delegate void OnAuthAttempt(string uri, string userName);
+    public delegate void OnAuthSuccess(string userName, string sessionId);
+    public delegate void OnAuthTimeout();
+    public delegate void OnAuthFailure(string message);
+    public delegate void OnConnectAttempt(string uri, string userName);
+    public delegate void OnConnectRetry();
+    public delegate void OnConnectSuccess();
+    public delegate void OnConnectTimeout();
+    public delegate void OnConnectFailure(string message);
+
     public class StateFluxConnection
     {
         private PlayerClientInfo _currentPlayer;
@@ -27,6 +37,15 @@ namespace StateFlux.Client
         public string RequestedUsername { get; set; }
         public string SessionSaveFilename { get; set; }
         public string Endpoint { get; set; }
+
+        public event OnAuthAttempt AuthAttemptEvent;
+        public event OnAuthSuccess AuthSuccessEvent;
+        public event OnAuthFailure AuthFailureEvent;
+        public event OnAuthTimeout AuthTimeoutEvent;
+        public event OnConnectAttempt ConnectAttemptEvent;
+        public event OnConnectSuccess ConnectSuccessEvent;
+        public event OnConnectFailure ConnectFailureEvent;
+        public event OnConnectTimeout ConnectTimeoutEvent;
 
         public WebSocketState ReadyState {
             get {
@@ -117,13 +136,15 @@ namespace StateFlux.Client
                     _webSocket = new WebSocket(Endpoint);
                     _webSocket.OnOpen += (object source, EventArgs e) =>
                     {
-                        Log("Websocket.OnOpen");
+                        //Log("Websocket.OnOpen");
+                        ConnectSuccessEvent?.Invoke();
                     };
                     _webSocket.OnMessage += ProcessMessagesHandler;
                     _webSocket.OnError += (object source, WebSocketSharp.ErrorEventArgs e) =>
                     {
                         errorEventArgs = e;
                         Log($"Websocket.OnError - {e.Message}");
+                        ConnectFailureEvent?.Invoke(e.Message);
                         if (e.Message.Contains("requires a user session"))
                         {
                             Log("websocket OnError - resetting saved session and reconnecting");
@@ -145,6 +166,12 @@ namespace StateFlux.Client
                         }
                     };
 
+
+                    if(_currentPlayer == null || UserName == null)
+                    {
+                        throw new Exception("Encountered empty player info");
+                    }
+                    ConnectAttemptEvent?.Invoke(UserName, Endpoint);
                     _webSocket.SetCookie(new Cookie(MessageConstants.SessionCookieName, _currentPlayer.SessionId));
                     _webSocket.Connect();
                 }
@@ -165,7 +192,10 @@ namespace StateFlux.Client
             }
 
             if(ReadyState != WebSocketState.Open)
+            {
+                ConnectTimeoutEvent?.Invoke();
                 Log("Gave up waiting for socket to open...");
+            }
             else
             {
                 Log("Socket open! Working from request queue...");
@@ -318,8 +348,10 @@ namespace StateFlux.Client
                     {
                         return false;
                     }
+                    AuthAttemptEvent?.Invoke(RequestedUsername, Endpoint);
                     _webSocket = new WebSocket(Endpoint);
                     _webSocket.OnMessage += HandleAuthResponseMessage;
+                    _webSocket.OnError += HandleAuthResponseError;
                     _webSocket.Connect();
                 }
 
@@ -332,6 +364,7 @@ namespace StateFlux.Client
 
                 if (ReadyState != WebSocketState.Open)
                 {
+                    AuthTimeoutEvent?.Invoke();
                     throw new Exception("Websocket Timeout");
                 }
 
@@ -358,8 +391,8 @@ namespace StateFlux.Client
             }
             catch (Exception e)
             {
-                Log(e.ToString());
                 ResetSavedSession();
+                AuthFailureEvent?.Invoke(e.Message);
             }
 
             lock(this)
@@ -369,6 +402,11 @@ namespace StateFlux.Client
             }
 
             return (_currentPlayer != null);
+        }
+
+        private void HandleAuthResponseError(object source, WebSocketSharp.ErrorEventArgs e)
+        {
+            AuthFailureEvent?.Invoke(e?.Exception.GetBaseException()?.Message ?? e.Message);
         }
 
         private void HandleAuthResponseMessage(object source, MessageEventArgs e)
@@ -401,7 +439,7 @@ namespace StateFlux.Client
             UserName = _currentPlayer.Name;
 
             SaveSession();
-            Log($"Player is authenticated as {_currentPlayer.Name} with sessionId = {_currentPlayer.SessionId}");
+            AuthSuccessEvent?.Invoke(_currentPlayer.Name,_currentPlayer.SessionId);
         }
 
         private void SaveSession()

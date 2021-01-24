@@ -16,6 +16,11 @@ public class TileInstance
     {
         return Position.Equals(((TileInstance)obj).Position);
     }
+
+    public override int GetHashCode()
+    {
+        return Position.GetHashCode();
+    }
 }
 public class TilePainter : MonoBehaviour
 {

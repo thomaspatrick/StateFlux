@@ -22,14 +22,14 @@ namespace StateFlux.Unity
             {
                 Vector3 vel = (_rigidBody != null) ? _rigidBody.velocity : Vector2.zero;
 
-                GameManager.Instance.OnTrackedObjectChange(name, transform.position, vel );
+                GameManage.Instance.OnTrackedObjectChange(name, transform.position, vel );
                 transform.hasChanged = false;
             }
         }
 
         void OnDestroy()
         {
-            GameManager.Instance.OnTrackedObjectDestroy(name);
+            GameManage.Instance.OnTrackedObjectDestroy(name);
         }
     }
 }

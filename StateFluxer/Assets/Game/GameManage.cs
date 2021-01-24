@@ -10,15 +10,15 @@ using StateFlux.Client;
 using StateFlux.Unity;
 using Newtonsoft.Json;
 
-public class GameManager : MonoBehaviour, IStateFluxListener
+public class GameManage : MonoBehaviour, IStateFluxListener
 {
     // --- Singleton ---
-    private static GameManager _instance;
-    public static GameManager Instance
+    private static GameManage _instance;
+    public static GameManage Instance
     {
         get
         {
-            if (_instance == null) throw new Exception("GameManager accessed before ready");
+            if (_instance == null) throw new Exception("GameManage accessed before ready");
             return _instance;
         }
     }
@@ -39,15 +39,22 @@ public class GameManager : MonoBehaviour, IStateFluxListener
 
     private void Awake()
     {
+
+        if (StateFluxClient.Instance == null)
+        {
+            SceneManager.LoadScene("_preload");
+            return;
+        }
+
         if (_instance != null && _instance != this)
         {
-            Debug.Log("GameManager blocking double instantiate");
+            Debug.Log("GameManage blocking double instantiate");
             Destroy(this.gameObject);
         }
         else
         {
             _instance = this;
-            Debug.Log("GameManager is Awake");
+            Debug.Log("GameManage is Awake");
         }
     }
 
@@ -65,15 +72,18 @@ public class GameManager : MonoBehaviour, IStateFluxListener
         }
         stateFluxClient.AddListener(this);
 
-        id = stateFluxClient.userName;
+        id = stateFluxClient.clientId;// Guid.NewGuid().ToString(); //stateFluxClient.userName;
+        DebugLog($"Initializing id to be {id}",true);
 
         if (stateFluxClient.isHosting)
         {
+            GameObject.Find("State_IsGuest").SetActive(false);
             CreateMouseAsHost(id, GetMousePoint());
             StartCoroutine(nameof(SendStateAsHost));
         }
         else
         {
+            GameObject.Find("State_IsHost").SetActive(false);
             StartCoroutine(nameof(SendInputAsGuest));
         }
     }
@@ -96,20 +106,20 @@ public class GameManager : MonoBehaviour, IStateFluxListener
         };
 
         var prefab = $"{change.TypeID}";
-        DebugLog($"CreateMouse is attempting to instantiate prefab '{prefab}' for id '{mouseId}'");
+        DebugLog($"CreateMouse is attempting to instantiate prefab '{prefab}' for id '{mouseId}'", true);
         var mousePointer = (GameObject)Instantiate(Resources.Load(prefab));
         if (mousePointer == null)
         {
             DebugLog($"StateCreateGameObject failed to instantiate prefab '{prefab}'");
         }
 
-        string side = stateFluxClient.isHosting ? "host" : "guest";
+        string side = stateFluxClient.isHosting ? "hostObject" : "guestObject";
 
         SetObjectColor(mousePointer, change.Attributes.Color);
-        SetObjectText(mousePointer, $"{change.ObjectID}(createmouse,{side})");
+        SetObjectText(mousePointer, $"{side}:{mouseId}");
         mousePointer.transform.position = mousePoint;
 
-        trackingMap[change.ObjectID] = new ChangeTracker
+        trackingMap[mouseId] = new ChangeTracker
         {
             change = change,
             gameObject = mousePointer
@@ -130,9 +140,12 @@ public class GameManager : MonoBehaviour, IStateFluxListener
     void UpdateAsHost()
     {
         Vector3 mousePoint = GetMousePoint();
+        DebugLog($"Now changing mouse position as {id}", true);
+
+        trackingMap[id].gameObject.transform.position = mousePoint;
         EnqueuePosChangeAsHost(id, mousePoint);
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButton(0))
         {
             ChangeTracker changeTracker = CreateBombAsHost(mousePoint);
             trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
@@ -198,7 +211,7 @@ public class GameManager : MonoBehaviour, IStateFluxListener
             Change2d change = tracker.change;
             if(change.Transform.Pos.X != pos.x || change.Transform.Pos.Y != pos.y)
             {
-                Debug.Log($"EnqueuePosChangeAsHost: position changed for {objectId}, so queueing...");
+                DebugLog($"EnqueuePosChangeAsHost: position changed for {objectId}, so queueing...", true);
                 change.Event = ChangeEvent.Updated;
                 change.Transform.Pos = pos.Convert2d();
                 changeQueue.Enqueue(change);
@@ -243,7 +256,8 @@ public class GameManager : MonoBehaviour, IStateFluxListener
         var input = new GuestInput
         {
             mPos = GetMousePoint().Convert2d(),
-            mDown = Input.GetMouseButtonDown(0),
+            mDown = Input.GetMouseButton(0),
+            mClicked = Input.GetMouseButtonDown(0),
             hArrows = Input.GetAxis("Horizontal"),
             vArrows = Input.GetAxis("Vertical"),
             btn1 = Input.GetButtonDown("Fire1"),
@@ -293,16 +307,26 @@ public class GameManager : MonoBehaviour, IStateFluxListener
                 }
 
                 var createdGameObject = StateCreateGameObject(change, false);
+                if(change.TypeID == "mouse")
+                {
+                    DebugLog($"Creating tracker for mouse! Calling it {change.ObjectID}", true);
+                }
                 trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, change = change };
-                DebugLog($"Created tracker for {change.ObjectID}.");
+                DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
             }
             else if (change.Event == ChangeEvent.Destroyed)
             {
+                if (change.TypeID == "mouse")
+                {
+                    DebugLog($"Destroying tracker for mouse!", true);
+                }
+
                 if (!found)
                 {
-                    DebugLog($"Host has asked us to destroy object {change.ObjectID} but it does not exist. (Skipping)");
+                    DebugLog($"Host has asked us to destroy object {change.ObjectID} but it does not exist. (Skipping)", true);
                     continue;
                 }
+
 
                 if (tracker.gameObject == null) // unity supposedly overrides the behavior of == to return null for destroyed objects, even if they haven't been c# deleted yet
                 {
@@ -310,16 +334,32 @@ public class GameManager : MonoBehaviour, IStateFluxListener
                 }
                 else
                 {
+                    DebugLog($"Destroying game object for {change.ObjectID}. (Should call OnTrackedObjectDestroy)");
                     GameObject.Destroy(tracker.gameObject);
+                    DebugLog($"Destroyed game object for {change.ObjectID}. (Should have called OnTrackedObjectDestroy)");
                 }
-                trackingMap.Remove(change.ObjectID);
-                DebugLog($"Removed tracker for {change.ObjectID}.");
             }
             else if (change.Event == ChangeEvent.Updated)
             {
+                if (change.TypeID == "mouse")
+                {
+                    DebugLog($"Updating tracker for mouse!", true);
+                }
+
                 if (!found)
                 {
-                    DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)");
+                    if (change.TypeID == "mouse")
+                    {
+                        var createdGameObject = StateCreateGameObject(change, false);
+                        DebugLog($"Special Behavior: creating tracker for unknown updating mouse! Calling it {change.ObjectID}", true);
+                        trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, change = change };
+                        DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
+                    }
+                    else
+                    {
+                        DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)", true);
+                    }
+
                     continue;
                 }
 
@@ -331,12 +371,12 @@ public class GameManager : MonoBehaviour, IStateFluxListener
 
                 if (tracker.gameObject == null) // unity supposedly overrides the behavior of == to return null for destroyed objects, even if they haven't been c# deleted yet
                 {
-                    DebugLog($"Host has asked us to update object {change.ObjectID} but it has already been destroyed. (Skipping)");
+                    DebugLog($"Host has asked us to update object {change.ObjectID} but it has already been destroyed. (Skipping)", true);
                     continue;
                 }
 
                 tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
-                DebugLog($"Updated position for {change.ObjectID}");
+                if(change.TypeID == "mouse") DebugLog($"Updated position for mouse {change.ObjectID} ({change.Transform.Pos.X},{change.Transform.Pos.X})");
             }
         }
 
@@ -350,10 +390,11 @@ public class GameManager : MonoBehaviour, IStateFluxListener
         {
             tracker.change.Transform.Pos = message.Payload.mPos;
             tracker.gameObject.transform.position = message.Payload.mPos.Convert2d();
-            // DebugLog($"OnStateFluxGuestInputChanged - moving mouse from '{JsonConvert.SerializeObject(message)}'");
+            DebugLog($"OnStateFluxGuestInputChanged - moving mouse from '{JsonConvert.SerializeObject(message)}'");
 
             if(message.Payload.mDown)
             {
+                DebugLog($"OnStateFluxGuestInputChanged - guest input changed mouse down '{JsonConvert.SerializeObject(message)}'");
                 CreateBombAsHost(message.Payload.mPos.Convert2d());
             }
         }
@@ -368,19 +409,19 @@ public class GameManager : MonoBehaviour, IStateFluxListener
     private GameObject StateCreateGameObject(Change2d change, bool asHost)
     {
         var prefabPath = $"{change.TypeID}";
-        DebugLog($"StateCreateGameObject is attempting to instantiate prefab '{prefabPath}' for '{change.ObjectID}'");
+        DebugLog($"StateCreateGameObject is attempting to instantiate prefab '{prefabPath}' for '{change.ObjectID}'", true);
         var obj = (GameObject)Instantiate(Resources.Load(prefabPath));
         if(obj == null)
         {
-            DebugLog($"StateCreateGameObject failed to instantiate prefab '{prefabPath}'");
+            DebugLog($"StateCreateGameObject failed to instantiate prefab '{prefabPath}'", true);
             return null;
         }
         obj.name = change.ObjectID;
 
-        string side = asHost ? "host" : "guest";
+        string side = asHost ? "hostObject" : "guestObject";
 
         if (change.Attributes.Color != null) SetObjectColor(obj, change.Attributes.Color);
-        SetObjectText(obj, $"{change.ObjectID}({side})");
+        SetObjectText(obj, $"{side}:{change.ObjectID}");
         if (!asHost) 
         {
             var rigidbody =obj.GetComponent<Rigidbody2D>();
@@ -390,7 +431,7 @@ public class GameManager : MonoBehaviour, IStateFluxListener
                 rigidbody.gravityScale = 0;
             }
 
-            // guest objects don't destroy themselves
+            // guest objects don't destroy themselves, so remove KillMeOverTime
             var killMeOverTime = obj.GetComponent<KillMeOverTime>();
             if(killMeOverTime != null) Destroy(killMeOverTime);
         }
@@ -404,10 +445,8 @@ public class GameManager : MonoBehaviour, IStateFluxListener
     {
         if(trackingMap.TryGetValue(name, out ChangeTracker tracker))
         {
-            // don't send guest state changes to the host for objects controlled by the host
-            // (send guest state changes about the mouse to the host)
-            bool controlledByHost = (!stateFluxClient.isHosting && tracker.change.ObjectID != this.id);
-            if(!controlledByHost)
+            // don't send guest state changes to the host, guest sends input and commands instead
+            if(stateFluxClient.isHosting)
             {
                 tracker.change.Event = ChangeEvent.Updated;
                 tracker.change.Transform.Pos = pos.Convert2d();
@@ -423,6 +462,9 @@ public class GameManager : MonoBehaviour, IStateFluxListener
         {
             tracker.change.Event = ChangeEvent.Destroyed;
             changeQueue.Enqueue(tracker.change);
+            trackingMap.Remove(name);
+            DebugLog($"Removed tracker for {name}.");
+
             DebugLog($"OnTrackedObjectDestroy, queued destroy change for '{name}'");
         }
         else
@@ -497,9 +539,12 @@ public class GameManager : MonoBehaviour, IStateFluxListener
         //if (textMesh != null) textMesh.color = color;
     }
 
-    static private void DebugLog(string msg)
+    static private void DebugLog(string msg, bool focus = false)
     {
-        Debug.Log(msg);
+        //if(focus)
+        {
+            Debug.Log(msg);
+        }
     }
 
     static private Vector3 GetMousePoint()

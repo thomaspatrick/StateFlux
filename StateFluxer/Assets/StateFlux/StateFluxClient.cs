@@ -65,7 +65,6 @@ public class StateFluxClient : MonoBehaviour
         {
             _instance = this;
             DontDestroyOnLoad(this.gameObject);
-            Debug.Log("StateFluxClient is Awake");
         }
     }
 
@@ -89,7 +88,6 @@ public class StateFluxClient : MonoBehaviour
     {
         if (hasSavedSession && connection == null)
         {
-            Debug.Log("StateFluxClient Initializing");
             InitializeClient(null); // start StateFlux.Client with no username (uses saved session)
         }
     }
@@ -113,6 +111,14 @@ public class StateFluxClient : MonoBehaviour
             Endpoint = endpoint,
             RequestedUsername = userName
         };
+
+        connection.AuthAttemptEvent += OnAuthAttemptEvent;
+        connection.AuthSuccessEvent += OnAuthSuccessEvent;
+        connection.AuthFailureEvent += OnAuthFailureEvent;
+        connection.AuthTimeoutEvent += OnAuthTimeoutEvent;
+        connection.ConnectAttemptEvent += OnConnectAttemptEvent;
+        connection.ConnectFailureEvent += OnConnectFailureEvent;
+        connection.ConnectTimeoutEvent += OnConnectTimeoutEvent;
         connection.Start();
         if (!isInitialized)
         {
@@ -121,6 +127,41 @@ public class StateFluxClient : MonoBehaviour
             StartCoroutine(ReceiveAndDispatchMessages());
         }
     }
+
+    private void OnAuthAttemptEvent(string username, string endpoint)
+    {
+        Debug.Log($"OnAuthAttemptEvent,{username},{endpoint}");
+    }
+
+    private void OnAuthSuccessEvent(string username, string sessionId)
+    {
+        Debug.Log($"OnAuthSuccessEvent,{username},{sessionId}");
+    }
+
+    private void OnAuthFailureEvent(string message)
+    {
+        Debug.Log($"OnAuthFailureEvent,{message}");
+    }
+
+    private void OnAuthTimeoutEvent()
+    {
+        Debug.Log($"OnAuthTimeoutEvent");
+    }
+    private void OnConnectAttemptEvent(string username, string endpoint)
+    {
+        Debug.Log($"OnConnectAttemptEvent,{username},{endpoint}");
+    }
+
+    private void OnConnectFailureEvent(string message)
+    {
+        Debug.Log($"OnConnectFailureEvent,{message}");
+    }
+
+    private void OnConnectTimeoutEvent()
+    {
+        Debug.Log($"OnConnectTimeoutEvent");
+    }
+
 
     public void Logout()
     {
@@ -149,7 +190,6 @@ public class StateFluxClient : MonoBehaviour
     {
         while (!connection.SocketOpenWithIdentity)
         {
-            Debug.Log("Waiting for a connection");
             foreach (var listener in listeners) listener.OnStateFluxWaitingToConnect();
             yield return new WaitForSeconds(1);
         }
