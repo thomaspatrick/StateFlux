@@ -299,6 +299,16 @@ namespace StateFlux.Client
                     //Debug.Log($"Receiving GuestInputChanged: {msgTxt}");
                     mappedMessage = JsonConvert.DeserializeObject<GuestInputChangedMessage>(msgTxt);
                 }
+                else if (responseMessage.MessageType == MessageTypeNames.HostCommandChanged)
+                {
+                    Debug.Log($"Receiving HostCommandChanged: {msgTxt}");
+                    mappedMessage = JsonConvert.DeserializeObject<HostCommandChangedMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.GuestCommandChanged)
+                {
+                    Debug.Log($"Receiving GuestCommandChanged: {msgTxt}");
+                    mappedMessage = JsonConvert.DeserializeObject<GuestCommandChangedMessage>(msgTxt);
+                }
                 else if (responseMessage.MessageType == MessageTypeNames.ServerError)
                 {
                     ServerErrorMessage error = JsonConvert.DeserializeObject<ServerErrorMessage>(msgTxt);

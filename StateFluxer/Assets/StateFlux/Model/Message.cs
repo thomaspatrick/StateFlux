@@ -91,6 +91,16 @@ namespace StateFlux.Model
         public StateChange Payload { get; set; }
     }
 
+    public class HostCommandChangeMessage : Message
+    {
+        public HostCommandChangeMessage()
+        {
+            MessageType = MessageTypeNames.HostCommandChange;
+        }
+
+        public GameCommand Payload { get; set; }
+    }
+
     public class GuestInputChangeMessage : Message
     {
         public GuestInputChangeMessage()
@@ -110,6 +120,16 @@ namespace StateFlux.Model
         public StateChange Payload { get; set; }
     }
 
+    public class HostCommandChangedMessage : Message
+    {
+        public HostCommandChangedMessage()
+        {
+            MessageType = MessageTypeNames.HostCommandChanged;
+        }
+
+        public GameCommand Payload { get; set; }
+    }
+
     // server 
     public class GuestInputChangedMessage : Message
     {
@@ -120,6 +140,27 @@ namespace StateFlux.Model
 
         public Guid Guest { get; set; }
         public GuestInput Payload { get; set; }
+    }
+
+    public class GuestCommandChangeMessage : Message
+    {
+        public GuestCommandChangeMessage()
+        {
+            MessageType = MessageTypeNames.GuestCommandChange;
+        }
+
+        public GameCommand Payload { get; set; }
+    }
+
+    public class GuestCommandChangedMessage : Message
+    {
+        public GuestCommandChangedMessage()
+        {
+            MessageType = MessageTypeNames.GuestCommandChanged;
+        }
+
+        public Guid Guest { get; set; }
+        public GameCommand Payload { get; set; }
     }
 
     public class GuestRequestFullStateMessage : Message

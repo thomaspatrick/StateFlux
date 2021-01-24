@@ -541,4 +541,12 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceStopped(GameInstanceStoppedMessage message)
     {
     }
+
+    public void OnStateFluxHostCommandChanged(HostCommandChangedMessage message)
+    {
+    }
+
+    public void OnStateFluxGuestCommandChanged(GuestCommandChangedMessage message)
+    {
+    }
 }

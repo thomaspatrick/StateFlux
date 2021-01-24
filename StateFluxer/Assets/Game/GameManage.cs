@@ -140,16 +140,30 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     void UpdateAsHost()
     {
         Vector3 mousePoint = GetMousePoint();
-        DebugLog($"Now changing mouse position as {id}", true);
+        //DebugLog($"Now changing mouse position as {id}", true);
 
         trackingMap[id].gameObject.transform.position = mousePoint;
         EnqueuePosChangeAsHost(id, mousePoint);
 
         if (Input.GetMouseButton(0))
         {
-            ChangeTracker changeTracker = CreateBombAsHost(mousePoint);
-            trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
-            changeQueue.Enqueue(changeTracker.change);
+            if(stateFluxClient.isHosting)
+            {
+                HostCommandChangeMessage message = new HostCommandChangeMessage()
+                {
+                    Payload = new GameCommand
+                    {
+                        Name = "floobie",
+                        ObjectId = "test",
+                        Params = new Dictionary<string,string>()
+                    }
+                };
+                message.Payload.Params["foo"] = "bar";
+                stateFluxClient.SendRequest(message);
+            }
+            //ChangeTracker changeTracker = CreateBombAsHost(mousePoint);
+            //trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
+            //changeQueue.Enqueue(changeTracker.change);
         }
     }
 
@@ -207,7 +221,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     {
         if(trackingMap.TryGetValue(objectId, out ChangeTracker tracker))
         {
-            Debug.Log($"EnqueuePosChangeAsHost: found tracker object for {objectId}");
+            //Debug.Log($"EnqueuePosChangeAsHost: found tracker object for {objectId}");
             Change2d change = tracker.change;
             if(change.Transform.Pos.X != pos.x || change.Transform.Pos.Y != pos.y)
             {
@@ -253,6 +267,23 @@ public class GameManage : MonoBehaviour, IStateFluxListener
 
     private void SendInputAsGuest()
     {
+        bool clicked = Input.GetMouseButtonDown(0);
+        if(clicked)
+        {
+            GuestCommandChangeMessage message = new GuestCommandChangeMessage()
+            {
+                Payload = new GameCommand
+                {
+                    Name = "groovy",
+                    ObjectId = "testy",
+                    Params = new Dictionary<string, string>()
+                }
+            };
+            message.Payload.Params["bin"] = "baz";
+            stateFluxClient.SendRequest(message);
+            clicked = false; // eat the click if a command is sent
+        }
+
         var input = new GuestInput
         {
             mPos = GetMousePoint().Convert2d(),
@@ -309,7 +340,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
                 var createdGameObject = StateCreateGameObject(change, false);
                 if(change.TypeID == "mouse")
                 {
-                    DebugLog($"Creating tracker for mouse! Calling it {change.ObjectID}", true);
+                   // DebugLog($"Creating tracker for mouse! Calling it {change.ObjectID}", true);
                 }
                 trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, change = change };
                 DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
@@ -343,7 +374,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
             {
                 if (change.TypeID == "mouse")
                 {
-                    DebugLog($"Updating tracker for mouse!", true);
+                    //DebugLog($"Updating tracker for mouse!", true);
                 }
 
                 if (!found)
@@ -376,7 +407,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
                 }
 
                 tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
-                if(change.TypeID == "mouse") DebugLog($"Updated position for mouse {change.ObjectID} ({change.Transform.Pos.X},{change.Transform.Pos.X})");
+                //if(change.TypeID == "mouse") DebugLog($"Updated position for mouse {change.ObjectID} ({change.Transform.Pos.X},{change.Transform.Pos.X})");
             }
         }
 
@@ -390,7 +421,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         {
             tracker.change.Transform.Pos = message.Payload.mPos;
             tracker.gameObject.transform.position = message.Payload.mPos.Convert2d();
-            DebugLog($"OnStateFluxGuestInputChanged - moving mouse from '{JsonConvert.SerializeObject(message)}'");
+            //DebugLog($"OnStateFluxGuestInputChanged - moving mouse from '{JsonConvert.SerializeObject(message)}'");
 
             if(message.Payload.mDown)
             {
@@ -569,5 +600,15 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     static private StateFlux.Model.Color CreateRandomColor()
     {
         return new StateFlux.Model.Color() { Red = Random.Range(0f, 1f), Green = Random.Range(0f, 1f), Blue = Random.Range(0f, 1f), Alpha = 1f };
+    }
+
+    public void OnStateFluxHostCommandChanged(HostCommandChangedMessage message)
+    {
+        DebugLog(message.Payload.Params["foo"]);
+    }
+
+    public void OnStateFluxGuestCommandChanged(GuestCommandChangedMessage message)
+    {
+        DebugLog(message.Payload.Params["bin"]);
     }
 }

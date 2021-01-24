@@ -10,6 +10,8 @@ namespace StateFlux.Client
         void OnStateFluxDisconnect();
         void OnStateFluxServerError(ServerErrorMessage message);
         void OnStateFluxHostStateChanged(HostStateChangedMessage message);
+        void OnStateFluxHostCommandChanged(HostCommandChangedMessage message);
+        void OnStateFluxGuestCommandChanged(GuestCommandChangedMessage message);
         void OnStateFluxGuestInputChanged(GuestInputChangedMessage message);
         void OnStateFluxPlayerListing(PlayerListingMessage message);
         void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message);
