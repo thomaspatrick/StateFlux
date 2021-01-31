@@ -15,12 +15,12 @@ using UnityEngine;
 namespace StateFlux.Client
 {
     public delegate void OnAuthAttempt(string uri, string userName);
-    public delegate void OnAuthSuccess(string userName, string sessionId);
+    public delegate void OnAuthSuccess(string playerName, string sessionId, string playerId);
     public delegate void OnAuthTimeout();
     public delegate void OnAuthFailure(string message);
     public delegate void OnConnectAttempt(string uri, string userName);
     public delegate void OnConnectRetry();
-    public delegate void OnConnectSuccess();
+    public delegate void OnConnectSuccess(string playerName, string sessionId, string playerId);
     public delegate void OnConnectTimeout();
     public delegate void OnConnectFailure(string message);
 
@@ -137,7 +137,7 @@ namespace StateFlux.Client
                     _webSocket.OnOpen += (object source, EventArgs e) =>
                     {
                         //Log("Websocket.OnOpen");
-                        ConnectSuccessEvent?.Invoke();
+                        ConnectSuccessEvent?.Invoke(_currentPlayer.Name, _currentPlayer.SessionId, _currentPlayer.Id);
                     };
                     _webSocket.OnMessage += ProcessMessagesHandler;
                     _webSocket.OnError += (object source, WebSocketSharp.ErrorEventArgs e) =>
@@ -210,7 +210,9 @@ namespace StateFlux.Client
                     if (_requests.TryDequeue(out Message message))
                     {
                         string serializedMessage = JsonConvert.SerializeObject(message);
-                        if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestInputChange)
+                        if (message.MessageType != MessageTypeNames.HostStateChange &&
+                            message.MessageType != MessageTypeNames.GuestInputChange &&
+                            message.MessageType != MessageTypeNames.MiceChange)
                         {
                             Log($"Sending message to server '{serializedMessage}'"); // enable for debug only
                         }
@@ -308,6 +310,10 @@ namespace StateFlux.Client
                 {
                     Debug.Log($"Receiving GuestCommandChanged: {msgTxt}");
                     mappedMessage = JsonConvert.DeserializeObject<GuestCommandChangedMessage>(msgTxt);
+                }
+                else if (responseMessage.MessageType == MessageTypeNames.MiceChanged)
+                {
+                    mappedMessage = JsonConvert.DeserializeObject<MiceChangedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.ServerError)
                 {
@@ -443,13 +449,14 @@ namespace StateFlux.Client
 
             _currentPlayer = new PlayerClientInfo
             {
+                Id = authenticated.PlayerId,
                 Name = authenticated.PlayerName,
                 SessionId = authenticated.SessionId
             };
             UserName = _currentPlayer.Name;
 
             SaveSession();
-            AuthSuccessEvent?.Invoke(_currentPlayer.Name,_currentPlayer.SessionId);
+            AuthSuccessEvent?.Invoke(_currentPlayer.Name,_currentPlayer.SessionId,_currentPlayer.Id);
         }
 
         private void SaveSession()

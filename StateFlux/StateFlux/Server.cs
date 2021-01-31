@@ -98,7 +98,7 @@ namespace StateFlux.Service
             return null;
         }
 
-        public GameInstance LookupInstance(Guid id)
+        public GameInstance LookupInstance(string    id)
         {
             foreach (var game in Games)
             {
@@ -111,11 +111,16 @@ namespace StateFlux.Service
             return null;
         }
 
-        public void StartGameInstance(Guid gameInstanceId)
+        public void StartGameInstance(string gameInstanceId)
         {
             GameInstance gameInstance = LookupInstance(gameInstanceId);
             gameInstance.State = GameInstanceState.Starting;
-            var startMessage = new GameInstanceStartMessage() { GameInstance = new GameInstanceRef(gameInstance), Host = gameInstance.HostPlayer };
+            var startMessage = new GameInstanceStartMessage()
+            {
+                GameInstance = new GameInstanceRef(gameInstance),
+                Host = gameInstance.HostPlayer,
+                Guests = gameInstance.Players
+            };
             BroadcastSystemMessage(startMessage);
         }
 

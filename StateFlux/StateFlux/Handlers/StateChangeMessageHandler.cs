@@ -32,12 +32,15 @@ namespace StateFlux.Service
 
             GameInstance gameInstance = _websocket.FindPlayerGameInstance(currentPlayer);
 
-            var outgoingMessage = new GuestInputChangedMessage
+            if(gameInstance != null)
             {
-                Guest = currentPlayer.Id,
-                Payload = message.Payload
-            };
-            _websocket.Send(outgoingMessage, gameInstance.HostPlayer.Id);
+                var outgoingMessage = new GuestInputChangedMessage
+                {
+                    Guest = currentPlayer.Id,
+                    Payload = message.Payload
+                };
+                _websocket.Send(outgoingMessage, gameInstance.HostPlayer.Id);
+            }
 
             return null;
         }

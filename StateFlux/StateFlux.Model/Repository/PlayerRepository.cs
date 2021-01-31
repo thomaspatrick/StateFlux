@@ -9,7 +9,7 @@ namespace StateFlux.Model.Repository
 {
     public class PlayerRepository : IPlayerRepository
     {
-        private Dictionary<Guid, Player> _players;
+        private Dictionary<string, Player> _players;
         private string _database = "playerdb.json";
 
         private const string _dateFormat = "yyyy-MM-ddTHH:mm:ss:ffff";
@@ -18,7 +18,7 @@ namespace StateFlux.Model.Repository
         {
         }
 
-        public Player GetPlayerById(Guid id)
+        public Player GetPlayerById(string id)
         {
             lock(this)
             {
@@ -36,9 +36,9 @@ namespace StateFlux.Model.Repository
                 return _players.Values;
             }
         }
-        public Guid InsertPlayer(Player player)
+        public string InsertPlayer(Player player)
         {
-            Guid result = Guid.Empty;
+            string result = null;
             lock (this)
             {
                 LazyLoadPlayerDb();
@@ -46,7 +46,7 @@ namespace StateFlux.Model.Repository
                 if(existingPlayer != null) {
                     throw new Exception("failed to insert player, GUID already in DB");
                 }
-                result = player.Id = Guid.NewGuid();
+                result = player.Id = ShortGuid.Generate();
                 RemoveAllPlayersWithName(player.Name); // if there are duplicate records for this username, this one wins
                 player.LastUpdated = DateTime.Now;
                 _players.Add(player.Id, player);
@@ -83,14 +83,14 @@ namespace StateFlux.Model.Repository
             if (_players == null) _players = LoadDb();
         }
 
-        private Dictionary<Guid, Player> LoadDb()
+        private Dictionary<string, Player> LoadDb()
         {
-            Dictionary<Guid, Player> map = null;
+            Dictionary<string, Player> map = null;
             try
             {
                 if (File.Exists(_database))
                 {
-                    map = JsonConvert.DeserializeObject<Dictionary<Guid, Player>>(File.ReadAllText(_database));
+                    map = JsonConvert.DeserializeObject<Dictionary<string, Player>>(File.ReadAllText(_database));
                     LogMessage($"Loaded player database from '{_database}'");
                 }
             }
@@ -101,7 +101,7 @@ namespace StateFlux.Model.Repository
 
             if (map == null)
             {
-                map = new Dictionary<Guid, Player>();
+                map = new Dictionary<string, Player>();
                 LogMessage($"Created new player database");
             }
 

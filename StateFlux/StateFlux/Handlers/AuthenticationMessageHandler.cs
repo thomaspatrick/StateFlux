@@ -47,6 +47,7 @@ namespace StateFlux.Service
                 player = _websocket.CreatePlayerSession(message.PlayerName.Truncate(MaxPlayerNameLen));
             }
 
+            response.PlayerId = player.Id.ToString();
             response.PlayerName = player.Name;
             response.SessionId = player.SessionData.SessionId;
             _websocket.LogMessage($"Player authenticated: {JsonConvert.SerializeObject(response)}");

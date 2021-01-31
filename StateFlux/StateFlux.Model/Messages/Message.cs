@@ -28,6 +28,7 @@ namespace StateFlux.Model
 
         public AuthenticationStatus Status { get; set; }
         public string StatusMessage { get; set; }
+        public string PlayerId { get; set; }
         public string PlayerName { get; set; }
         public string SessionId { get; set; }
     }
@@ -79,6 +80,26 @@ namespace StateFlux.Model
         }
 
         public string Name { get; set; }
+    }
+
+    public class MiceChangeMessage : Message
+    {
+        public MiceChangeMessage()
+        {
+            MessageType = MessageTypeNames.MiceChange;
+        }
+
+        public Mice Payload { get; set; }
+    }
+
+    public class MiceChangedMessage : Message
+    {
+        public MiceChangedMessage()
+        {
+            MessageType = MessageTypeNames.MiceChanged;
+        }
+
+        public Mice Payload { get; set; }
     }
 
     public class HostStateChangeMessage : Message
@@ -138,7 +159,7 @@ namespace StateFlux.Model
             MessageType = MessageTypeNames.GuestInputChanged;
         }
 
-        public Guid Guest { get; set; }
+        public string Guest { get; set; }
         public GuestInput Payload { get; set; }
     }
 
@@ -159,7 +180,7 @@ namespace StateFlux.Model
             MessageType = MessageTypeNames.GuestCommandChanged;
         }
 
-        public Guid Guest { get; set; }
+        public string Guest { get; set; }
         public GameCommand Payload { get; set; }
     }
 
@@ -263,6 +284,7 @@ namespace StateFlux.Model
 
         public GameInstanceRef GameInstance { get; set; }
         public Player Host { get; set; }
+        public List<Player> Guests { get; set; }
     }
 
     public class GameInstanceStoppedMessage : Message

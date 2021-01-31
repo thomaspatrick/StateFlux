@@ -12,7 +12,7 @@ namespace StateFlux.Model
 
     public class Player
     {
-        public Guid Id { get; set; }
+        public string Id { get; set; }
         public string Name { get; set; }
         public Color Color { get; set; }
         public int Icon { get; set; }

@@ -85,7 +85,9 @@ namespace StateFlux.Service
             Player player = new Player
             {
                 Name = playerName,
-                SessionData = new PlayerSessionData { SessionId = Guid.NewGuid().ToString(), WebsocketSessionId = this.ID },
+                Id = ShortGuid.Generate(),
+                SessionData = new PlayerSessionData { SessionId = ShortGuid.Generate(), WebsocketSessionId = this.ID },
+                Color = ColorSequence.Next()
             };
             Server.Instance.playerRepository.InsertPlayer(player);
             Server.Instance.Players.Add(player);
@@ -136,7 +138,7 @@ namespace StateFlux.Service
             }
         }
 
-        public void Send(Message message, Guid playerId)
+        public void Send(Message message, string playerId)
         {
             try
             {
@@ -261,7 +263,9 @@ namespace StateFlux.Service
 
                 Player player = this.GetCurrentSessionPlayer();
                 string pname = (player != null) ? player.Name : "unknown";
-                if (message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestInputChange)
+                if (message.MessageType != MessageTypeNames.HostStateChange && 
+                    message.MessageType != MessageTypeNames.GuestInputChange &&
+                    message.MessageType != MessageTypeNames.MiceChange)
                 {
                     LogMessage($"OnMessage.Processing {message.MessageType} from {pname}");
                 }
@@ -270,7 +274,9 @@ namespace StateFlux.Service
                 {
                     Respond(responseMessage);
                 }
-                if(message.MessageType != MessageTypeNames.HostStateChange && message.MessageType != MessageTypeNames.GuestInputChange)
+                if(message.MessageType != MessageTypeNames.HostStateChange 
+                    && message.MessageType != MessageTypeNames.GuestInputChange
+                    && message.MessageType != MessageTypeNames.MiceChange)
                 {
                     LogMessage($"OnMessage.Processed {message.MessageType} from {pname}");
                 }

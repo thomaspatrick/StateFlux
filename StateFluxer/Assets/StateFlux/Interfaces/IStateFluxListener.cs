@@ -22,6 +22,7 @@ namespace StateFlux.Client
         void OnStateFluxGameInstanceLeft(GameInstanceLeftMessage message);
         void OnStateFluxChatSaid(ChatSaidMessage message);
         void OnStateFluxOtherMessage(Message message);
+        void OnStateFluxMiceChanged(MiceChangedMessage msg);
     }
 
 }

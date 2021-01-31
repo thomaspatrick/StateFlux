@@ -44,7 +44,7 @@ public class StateFluxClient : MonoBehaviour
     {
         connected = false;
         isInitialized = false;
-        clientId = Guid.NewGuid().ToString();
+        //clientId = null;
         sessionFile = Application.persistentDataPath;
         if (Application.isEditor)
             sessionFile += "/currentplayer-editor.json";
@@ -117,6 +117,7 @@ public class StateFluxClient : MonoBehaviour
         connection.AuthFailureEvent += OnAuthFailureEvent;
         connection.AuthTimeoutEvent += OnAuthTimeoutEvent;
         connection.ConnectAttemptEvent += OnConnectAttemptEvent;
+        connection.ConnectSuccessEvent += OnConnectSuccess;
         connection.ConnectFailureEvent += OnConnectFailureEvent;
         connection.ConnectTimeoutEvent += OnConnectTimeoutEvent;
         connection.Start();
@@ -128,14 +129,23 @@ public class StateFluxClient : MonoBehaviour
         }
     }
 
+    private void OnConnectSuccess(string playerName, string sessionId, string playerId)
+    {
+        clientId = playerId;
+        Debug.Log($"OnConnectSuccessEvent,{playerName},{sessionId},{playerId}");
+        Debug.Log($"Initializing id to be {clientId}");
+    }
+
     private void OnAuthAttemptEvent(string username, string endpoint)
     {
         Debug.Log($"OnAuthAttemptEvent,{username},{endpoint}");
     }
 
-    private void OnAuthSuccessEvent(string username, string sessionId)
+    private void OnAuthSuccessEvent(string playerName, string sessionId, string playerId)
     {
-        Debug.Log($"OnAuthSuccessEvent,{username},{sessionId}");
+        clientId = playerId;
+        Debug.Log($"OnAuthSuccessEvent,{playerName},{sessionId},{playerId}");
+        Debug.Log($"Initializing id to be {clientId}");
     }
 
     private void OnAuthFailureEvent(string message)
@@ -222,6 +232,11 @@ public class StateFluxClient : MonoBehaviour
                     {
                         // FIXME: convert all the others to linq method ForEach
                         listeners.ForEach(l => l.OnStateFluxHostStateChanged((HostStateChangedMessage)message));
+                    }
+                    else if (message.MessageType == MessageTypeNames.MiceChanged)
+                    {
+                        MiceChangedMessage msg = (MiceChangedMessage)message;
+                        foreach (var listener in listeners) listener.OnStateFluxMiceChanged(msg);
                     }
                     else if (message.MessageType == MessageTypeNames.HostCommandChanged)
                     {

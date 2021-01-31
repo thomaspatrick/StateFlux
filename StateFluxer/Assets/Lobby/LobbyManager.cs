@@ -384,7 +384,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
     {
         DebugLog($"Server says {message.GameInstance.HostPlayer.Name} began hosting a new game instance: {message.GameInstance.Name}.  (I am {this.LastUsername})");
-        if (message.GameInstance.HostPlayer.Name == LastUsername)
+        if (message.GameInstance.HostPlayer.Name == LastUsername )
         {
             DebugLog($"Current user is hosting a game");
             _hostingGame = true;
@@ -547,6 +547,10 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     }
 
     public void OnStateFluxGuestCommandChanged(GuestCommandChangedMessage message)
+    {
+    }
+
+    public void OnStateFluxMiceChanged(MiceChangedMessage msg)
     {
     }
 }

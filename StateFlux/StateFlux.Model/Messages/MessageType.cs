@@ -34,6 +34,9 @@ namespace StateFlux.Model
         public static string GameInstanceStart = "GameInstanceStart";
         public static string GameInstanceStopped = "GameInstanceStopped";
 
+        public static string MiceChange = "MiceChange";
+        public static string MiceChanged = "MiceChanged";
+
         // state request messages
         public static string HostStateChange = "HostStateChange";
         public static string HostCommandChange = "HostCommandChange";
