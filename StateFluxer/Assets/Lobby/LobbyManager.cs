@@ -74,6 +74,10 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     private GameObject _currentShowingPanel;
     private bool _hostingGame;
 
+    public Player hostPlayer = null;
+    public Dictionary<string, Player> players = new Dictionary<string, Player>();
+
+
     public string LastUsername
     {
         get 
@@ -436,6 +440,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceStart(GameInstanceStartMessage message)
     {
         DebugLog("OnStateFluxGameInstanceStart!");
+        players.Clear();
+        hostPlayer = message.Host;
+        players[message.Host.Id] = message.Host;
+        foreach (Player p in message.Guests)
+        {
+            players[p.Id] = p;
+        }
         if (message.GameInstance.GameName == "AssetCollapse")
             SceneManager.LoadScene("PlaceholderGame");
         else

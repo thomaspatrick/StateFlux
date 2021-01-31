@@ -215,7 +215,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2a1b3e5e5682404a8d8dc5b4718b246, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  myMousePrefab: {fileID: 2639867030782649101, guid: 995b566cf38ec0044a7d4c92d6ee3b60,
+  myMousePrefab: {fileID: 1170630096219939851, guid: b0e121feafd85aa45a943cb949bcbef1,
     type: 3}
   theirMousePrefab: {fileID: 1170630096219939851, guid: b0e121feafd85aa45a943cb949bcbef1,
     type: 3}
@@ -736,7 +736,7 @@ SpriteRenderer:
   m_Size: {x: 2, y: 2}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!4 &2034270578

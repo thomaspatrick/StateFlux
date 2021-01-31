@@ -32,8 +32,14 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     private Queue<Change2d> changeQueue;
     private GuestInput lastGuestInput;
     private MiceTracker miceTracker;
-    private GameObject myMouse, theirMouse;
+    private GameObject thisMouse, thatMouse;
     public GameObject myMousePrefab, theirMousePrefab;
+
+    public Player thisPlayer = null;
+    public Player thatPlayer = null;
+    public Player hostPlayer = null;
+    public Dictionary<string, Player> players = new Dictionary<string, Player>();
+
 
     private void Awake()
     {
@@ -64,6 +70,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         miceTracker = new MiceTracker();
         Cursor.visible = false;
 
+
         stateFluxClient = GameObject.Find("StateFlux").GetComponent<StateFluxClient>();
         if (stateFluxClient == null)
         {
@@ -72,10 +79,19 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         }
         stateFluxClient.AddListener(this);
 
-        myMouse = GameObject.Instantiate(myMousePrefab);
-        theirMouse = GameObject.Instantiate(theirMousePrefab);
+        id = stateFluxClient.clientId;
 
-        id = stateFluxClient.clientId; 
+        // when the game instance starts, LobbyManager receives a notification and sets these values
+        // we copy them here for convenience
+        hostPlayer = LobbyManager.Instance.hostPlayer;
+        players = LobbyManager.Instance.players;
+        thisPlayer = players[id];
+        thatPlayer = players.Values.Where(p => p.Id != id).FirstOrDefault();
+
+        thisMouse = GameObject.Instantiate(myMousePrefab);
+        SetObjectColor(thisMouse, thisPlayer.Color);
+        thatMouse = GameObject.Instantiate(theirMousePrefab);
+        SetObjectColor(thatMouse, thatPlayer.Color);
 
         if (stateFluxClient.isHosting)
         {
@@ -127,7 +143,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         Vector3 mousePoint = Input.mousePosition;
         mousePoint.z = Camera.main.nearClipPlane;
         Vector3 world = Camera.main.ScreenToWorldPoint(mousePoint);
-        myMouse.transform.position = world;
+        thisMouse.transform.position = world;
 
         // host's mouse position
         miceTracker.Track(id, new Vec2d { X = world.x, Y = world.y });
@@ -467,17 +483,8 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     {
     }
 
-    public Player activeHostPlayer = null;
-    public Dictionary<string, Player> activePlayers = new Dictionary<string, Player>();
-
     public void OnStateFluxGameInstanceCreated(GameInstanceCreatedMessage message)
     {
-        activePlayers.Clear();
-        activeHostPlayer = message.GameInstance.HostPlayer;
-        foreach (Player p in message.GameInstance.Players)
-        {
-            activePlayers[p.Id] = p;
-        }
     }
 
     public void OnStateFluxGameInstanceJoined(GameInstanceJoinedMessage message)
@@ -495,6 +502,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceStart(GameInstanceStartMessage message)
     {
     }
+
     public void OnStateFluxGameInstanceStopped(GameInstanceStoppedMessage message)
     {
         Debug.Log("OnStateFluxGameInstanceStopped!");
@@ -570,12 +578,12 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     {
         if(m.PlayerId == id)
         {
-            myMouse.transform.position = m.Pos.Convert3d();
+            thisMouse.transform.position = m.Pos.Convert3d();
         }
         else
         {
             // assume 2 players
-            theirMouse.transform.position = m.Pos.Convert3d();
+            thatMouse.transform.position = m.Pos.Convert3d();
         }
     }
 }
