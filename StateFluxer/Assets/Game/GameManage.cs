@@ -23,22 +23,30 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         }
     }
 
-    private static readonly StateFlux.Model.Color hostColor = new StateFlux.Model.Color { Red = 1f, Green = 0f, Blue = 0f, Alpha = 1f };
-    private static readonly StateFlux.Model.Color guestColor = new StateFlux.Model.Color { Red = 0f, Green = 0f, Blue = 1f, Alpha = 1f };
-
+    // this is the stateflux player id
     private string id;
+
     private StateFluxClient stateFluxClient;
+
+    // object tracking
     private Dictionary<string, ChangeTracker> trackingMap;
     private Queue<Change2d> changeQueue;
-    private GuestInput lastGuestInput;
-    private MiceTracker miceTracker;
-    private GameObject thisMouse, thatMouse;
-    public GameObject myMousePrefab, theirMousePrefab;
 
-    public Player thisPlayer = null;
-    public Player thatPlayer = null;
-    public Player hostPlayer = null;
-    public Dictionary<string, Player> players = new Dictionary<string, Player>();
+    // used when running as a guest to determine if changed input should be sent to the server
+    private GuestInput lastGuestInput;
+
+    // used by the host to keep track of multiple mouse information
+    private MiceTracker miceTracker;
+
+    public GameObject mousePrefab;
+    public GameObject jakePrefab;
+
+    private GameObject thisMouse, thatMouse;
+
+    private Player thisPlayer = null;
+    private Player thatPlayer = null;
+    private Player hostPlayer = null;
+    private Dictionary<string, Player> players = new Dictionary<string, Player>();
 
 
     private void Awake()
@@ -70,7 +78,6 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         miceTracker = new MiceTracker();
         Cursor.visible = false;
 
-
         stateFluxClient = GameObject.Find("StateFlux").GetComponent<StateFluxClient>();
         if (stateFluxClient == null)
         {
@@ -81,16 +88,16 @@ public class GameManage : MonoBehaviour, IStateFluxListener
 
         id = stateFluxClient.clientId;
 
-        // when the game instance starts, LobbyManager receives a notification and sets these values
+        // when the game instance starts, LobbyManager receives a game instance start notification and saves these
         // we copy them here for convenience
         hostPlayer = LobbyManager.Instance.hostPlayer;
         players = LobbyManager.Instance.players;
         thisPlayer = players[id];
         thatPlayer = players.Values.Where(p => p.Id != id).FirstOrDefault();
 
-        thisMouse = GameObject.Instantiate(myMousePrefab);
+        thisMouse = GameObject.Instantiate(mousePrefab);
         SetObjectColor(thisMouse, thisPlayer.Color);
-        thatMouse = GameObject.Instantiate(theirMousePrefab);
+        thatMouse = GameObject.Instantiate(mousePrefab);
         SetObjectColor(thatMouse, thatPlayer.Color);
 
         if (stateFluxClient.isHosting)
@@ -117,48 +124,51 @@ public class GameManage : MonoBehaviour, IStateFluxListener
 
     void OnGUI()
     {
-        Camera cam = Camera.main;
         Event currentEvent = Event.current;
 
-
-        Vector2 mousePos = new Vector2();
-        mousePos.x = currentEvent.mousePosition.x;
-        mousePos.y = cam.pixelHeight - currentEvent.mousePosition.y;
-
-        Vector3 point = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, cam.nearClipPlane));
+        //Camera cam = Camera.main;
+        //Vector2 mousePos = new Vector2();
+        //mousePos.x = currentEvent.mousePosition.x;
+        //mousePos.y = cam.pixelHeight - currentEvent.mousePosition.y;
+        //Vector3 point = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, cam.nearClipPlane));
 
         GUILayout.BeginArea(new Rect(20, 20, 250, 520));
-        GUILayout.Label("Player Id: " + id);
+        GUILayout.Label($"Player Id: {id} {(stateFluxClient.isHosting ? "(Host)" : "(Guest)")}");
+        GUILayout.Label("Items in tracking map: " + trackingMap.Count);
         //GUILayout.Label("Screen pixels: " + cam.pixelWidth + ":" + cam.pixelHeight);
         //GUILayout.Label("Mouse position: " + mousePos);
         //GUILayout.Label("World position: " + point.ToString("F3"));
         //GUILayout.Label("My Mouse GO: " + myMouse.transform.position.x + "," + myMouse.transform.position.y);
         //GUILayout.Label("Their Mouse GO: " + theirMouse.transform.position.x + "," + theirMouse.transform.position.y);
-        miceTracker.GUIDescribe();
+        // miceTracker.GUIDescribe();
         GUILayout.EndArea();
     }
 
     void UpdateAsHost()
     {
+        // get mouse position
         Vector3 mousePoint = Input.mousePosition;
         mousePoint.z = Camera.main.nearClipPlane;
         Vector3 world = Camera.main.ScreenToWorldPoint(mousePoint);
+
+        // move mouse cursor object to that position
         thisMouse.transform.position = world;
 
-        // host's mouse position
+        // keep track of my mouse position in the list of mice sent to guests
         miceTracker.Track(id, new Vec2d { X = world.x, Y = world.y });
 
+        // get a list of only mice that have changed position
         Mice mice = miceTracker.BuildMice();
         if(mice != null)
         {
-            // send mice changes to guests
+            // send changed mice to guests
             MiceChangeMessage mcm = new MiceChangeMessage
             {
                 Payload = mice
             };
             stateFluxClient.SendRequest(mcm);
 
-            // show mice changes
+            // move mouse cursor gameobjects
             foreach (Mouse m in mice.Items)
             {
                 SetPlayerMouseDetails(m);
@@ -181,9 +191,9 @@ public class GameManage : MonoBehaviour, IStateFluxListener
                 message.Payload.Params["foo"] = "bar";
                 stateFluxClient.SendRequest(message);
             }
-            //ChangeTracker changeTracker = CreateBombAsHost(mousePoint);
-            //trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
-            //changeQueue.Enqueue(changeTracker.change);
+            ChangeTracker changeTracker = CreateJake(world, thisPlayer.Color);
+            trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
+            changeQueue.Enqueue(changeTracker.change);
         }
     }
 
@@ -192,13 +202,13 @@ public class GameManage : MonoBehaviour, IStateFluxListener
         SendInputAsGuest();
     }
 
-    private ChangeTracker CreateBombAsHost(Vector3 mousePoint)
+    private ChangeTracker CreateJake(Vector3 mousePoint, StateFlux.Model.Color color)
     {
         var change = new StateFlux.Model.Change2d
         {
             Event = ChangeEvent.Created,
-            ObjectID = "bomb" + ShortGuid.Generate(),
-            TypeID = "bomb",
+            ObjectID = "jake" + ShortGuid.Generate(),
+            TypeID = "jake",
             Transform = new Transform2d
             {
                 Pos = mousePoint.Convert2d(),
@@ -206,11 +216,11 @@ public class GameManage : MonoBehaviour, IStateFluxListener
             },
             Attributes = new StateFlux.Model.Attributes
             {
-                Color = CreateHostingColor()
+                Color = color
             }
         };
-        GameObject bomb = StateCreateGameObject(change, stateFluxClient.isHosting);
-        return new ChangeTracker { gameObject = bomb, change = change };
+        GameObject jake = StateCreateGameObject(change, stateFluxClient.isHosting);
+        return new ChangeTracker { gameObject = jake, change = change };
     }
 
 
@@ -362,8 +372,11 @@ public class GameManage : MonoBehaviour, IStateFluxListener
             {
                 if (!found)
                 {
-                    DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)", true);
-                    continue;
+                    var createdGameObject = StateCreateGameObject(change, false);
+                    tracker = trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, change = change };
+                    DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
+                    //DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)", true);
+                    //continue;
                 }
 
                 if (change?.Transform?.Pos == null)
@@ -389,6 +402,13 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     {
         string guestMouseId = message.Guest.ToString();
         miceTracker.Track(guestMouseId, message.Payload.mPos);
+
+        if(message.Payload.mClicked)
+        {
+            ChangeTracker changeTracker = CreateJake(message.Payload.mPos.Convert3d(), thatPlayer.Color);
+            trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
+            changeQueue.Enqueue(changeTracker.change);
+        }
     }
 
     // loads the prefab named the same as change.TypeID, applies caption, color & position
@@ -446,12 +466,19 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     {
         if (trackingMap.TryGetValue(name, out ChangeTracker tracker))
         {
-            tracker.change.Event = ChangeEvent.Destroyed;
-            changeQueue.Enqueue(tracker.change);
+            if(stateFluxClient.isHosting)
+            {
+                tracker.change.Event = ChangeEvent.Destroyed;
+                changeQueue.Enqueue(tracker.change);
+                DebugLog($"OnTrackedObjectDestroy, queued destroy change for '{name}'");
+            }
+            else
+            {
+                DebugLog($"OnTrackedObjectDestroy, removed tracker for '{name}'");
+            }
             trackingMap.Remove(name);
             DebugLog($"Removed tracker for {name}.");
 
-            DebugLog($"OnTrackedObjectDestroy, queued destroy change for '{name}'");
         }
         else
         {
@@ -521,7 +548,7 @@ public class GameManage : MonoBehaviour, IStateFluxListener
 
     static private void SetObjectColor(GameObject gameObject, StateFlux.Model.Color newColor)
     {
-        UnityEngine.Color color = new UnityEngine.Color(newColor.Red, newColor.Green, newColor.Green, newColor.Alpha);
+        UnityEngine.Color color = new UnityEngine.Color(newColor.Red, newColor.Green, newColor.Blue, newColor.Alpha);
         var spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
         //var textMesh = gameObject.GetComponentInChildren<TextMesh>();
         if (spriteRenderer != null) spriteRenderer.color = color;
@@ -548,11 +575,6 @@ public class GameManage : MonoBehaviour, IStateFluxListener
     {
         var textMesh = gameObject.GetComponentInChildren<TextMesh>();
         if (textMesh != null) textMesh.text = newText;
-    }
-
-    private StateFlux.Model.Color CreateHostingColor()
-    {
-        return stateFluxClient.isHosting ? hostColor : guestColor;
     }
 
     public void OnStateFluxHostCommandChanged(HostCommandChangedMessage message)

@@ -215,9 +215,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2a1b3e5e5682404a8d8dc5b4718b246, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  myMousePrefab: {fileID: 1170630096219939851, guid: b0e121feafd85aa45a943cb949bcbef1,
+  mousePrefab: {fileID: 1170630096219939851, guid: b0e121feafd85aa45a943cb949bcbef1,
     type: 3}
-  theirMousePrefab: {fileID: 1170630096219939851, guid: b0e121feafd85aa45a943cb949bcbef1,
+  jakePrefab: {fileID: 248996847183920919, guid: 2923e089d5b6a3a4f84ab171a0bced6f,
     type: 3}
 --- !u!1 &927422908
 GameObject:
