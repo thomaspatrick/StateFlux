@@ -136,6 +136,13 @@ public class GameObjectTracker
         }
         obj.AddComponent<StateFluxTracked>();
         obj.transform.position = change.Transform.Pos.Convert3d();
+        obj.transform.eulerAngles = new Vector3(0,0,change.Transform.Rot);
+        Rigidbody2D rb = obj.GetComponent<Rigidbody2D>();
+        if(rb != null)
+        {
+            rb.velocity = change.Transform.Vel.Convert2d();
+            rb.angularVelocity = change.Transform.RotV;
+        }
 
         return obj;
     }
@@ -210,17 +217,19 @@ public class GameObjectTracker
                 }
 
                 tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
+                tracker.gameObject.transform.eulerAngles = new Vector3(0, 0, change.Transform.Rot);
                 Rigidbody2D rb = tracker.gameObject.GetComponent<Rigidbody2D>();
                 if (rb != null)
                 {
                     rb.velocity = change.Transform.Vel.Convert2d();
+                    rb.angularVelocity = change.Transform.RotV;
                 }
             }
         }
 
     }
 
-    public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel)
+    public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity)
     {
         if (trackingMap.TryGetValue(name, out ChangeTracker tracker))
         {
@@ -236,6 +245,8 @@ public class GameObjectTracker
                 tracker.update.Event = ChangeEvent.Updated;
                 tracker.update.Transform.Pos = pos.Convert2d();
                 tracker.update.Transform.Vel = vel.Convert2d();
+                tracker.update.Transform.Rot = eulerAngles.z;
+                tracker.update.Transform.RotV = angularVelocity;
                 tracker.dirty = true;
                 //changeQueue.Enqueue(tracker.change);
             }

@@ -212,7 +212,9 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
             Transform = new Transform2d
             {
                 Pos = mousePoint.Convert2d(),
-                Vel = new Vec2d { X = 0, Y = 0 }
+                Vel = new Vec2d { X = 0, Y = 0 },
+                Rot = 0, //UnityEngine.Random.value * 720.0f - 360.0f,
+                RotV = UnityEngine.Random.value * 100.0f - 50.0f
             },
             Attributes = new StateFlux.Model.Attributes
             {
@@ -449,9 +451,9 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     //    return obj;
     //}
 
-    public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel)
+    public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity)
     {
-        gameObjectTracker.OnTrackedObjectChange(name, pos, vel);
+        gameObjectTracker.OnTrackedObjectChange(name, pos, vel, eulerAngles, angularVelocity);
         //if(trackingMap.TryGetValue(name, out ChangeTracker tracker))
         //{
         //    // don't send guest state changes to the host, guest sends input and commands instead

@@ -13,6 +13,7 @@ namespace StateFlux.Model
         public Vec2d Pos { get; set; }
         public Vec2d Vel { get; set; }
         public float Rot { get; set; }
+        public float RotV { get; set; }
         public float Scale { get; set; }
     }
 

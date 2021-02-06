@@ -21,8 +21,9 @@ namespace StateFlux.Unity
             if (transform.hasChanged)
             {
                 Vector3 vel = (_rigidBody != null) ? _rigidBody.velocity : Vector2.zero;
+                float angularVelocity = (_rigidBody != null) ? _rigidBody.angularVelocity : 0f;
 
-                DemoGame.Instance.OnTrackedObjectChange(name, transform.position, vel );
+                DemoGame.Instance.OnTrackedObjectChange(name, transform.position, vel, transform.eulerAngles, angularVelocity );
                 transform.hasChanged = false;
             }
         }
