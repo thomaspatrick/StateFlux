@@ -20,30 +20,12 @@ public class GameObjectTracker
         //changeQueue = new Queue<Change2d>();
     }
 
-    // coroutine that sweeps up deleted trackers
-    //public IEnumerator SweepStateAsGuest()
-    //{
-    //    List<string> ids = new List<string>();
-    //    foreach (ChangeTracker changeTracker in trackingMap.Values.Where(t => t.destroy != null))
-    //    {
-    //        ids.Add(changeTracker.destroy.ObjectID);
-    //    }
-
-    //    foreach(string id in ids)
-    //    {
-    //        trackingMap.Remove(id);
-    //    }
-
-    //    yield return new WaitForSeconds(1f);
-    //}
-
     // coroutine that sends out the HostStateChangeMessage messages
+    // sends changes to mouse pos and tracked objects to the server, every 50 milliseconds
     public IEnumerator SendStateAsHost()
     {
         while (true)
         {
-            // send changes to mouse pos and tracked objects to the server, every 50 milliseconds
-            //IEnumerable<ChangeTracker> changes = trackingMap.Values.Where(t => t.dirty);
 
             List<Change2d> changes = new List<Change2d>();
             List<string> removeIds = new List<string>();
@@ -96,7 +78,6 @@ public class GameObjectTracker
     public void TrackCreate(ChangeTracker changeTracker)
     {
         trackingMap.Add(changeTracker.create.ObjectID, changeTracker);
-        //changeQueue.Enqueue(changeTracker.change);
     }
 
     public int Count()
@@ -188,9 +169,9 @@ public class GameObjectTracker
                 }
                 else
                 {
-                    DebugLog($"Destroying game object for {change.ObjectID}. (Should call OnTrackedObjectDestroy)");
+                    //DebugLog($"Destroying game object for {change.ObjectID}. (Should call OnTrackedObjectDestroy)");
                     GameObject.Destroy(tracker.gameObject);
-                    DebugLog($"Destroyed game object for {change.ObjectID}. (Should have called OnTrackedObjectDestroy)");
+                    //DebugLog($"Destroyed game object for {change.ObjectID}. (Should have called OnTrackedObjectDestroy)");
                 }
             }
             else if (change.Event == ChangeEvent.Updated)
@@ -200,8 +181,6 @@ public class GameObjectTracker
                     var createdGameObject = StateCreateGameObject(change, false);
                     tracker = trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, update = change };
                     //DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
-                    //DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)", true);
-                    //continue;
                 }
 
                 if (change?.Transform?.Pos == null)
@@ -226,7 +205,6 @@ public class GameObjectTracker
                 }
             }
         }
-
     }
 
     public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity)
@@ -248,7 +226,6 @@ public class GameObjectTracker
                 tracker.update.Transform.Rot = eulerAngles.z;
                 tracker.update.Transform.RotV = angularVelocity;
                 tracker.dirty = true;
-                //changeQueue.Enqueue(tracker.change);
             }
         }
     }
@@ -263,19 +240,13 @@ public class GameObjectTracker
                 tracker.destroy.ObjectID = name;
                 tracker.destroy.Event = ChangeEvent.Destroyed;
                 tracker.dirty = true;
-                
-//                changeQueue.Enqueue(tracker.change);
                 //DebugLog($"OnTrackedObjectDestroy, queued destroy change for '{name}'");
             }
             else
             {            
                 trackingMap.Remove(name);
-
                 //DebugLog($"OnTrackedObjectDestroy, removed tracker for '{name}'");
             }
-            //trackingMap.Remove(name); // place in remove queue?
-            //DebugLog($"Removed tracker for {name}.");
-
         }
         else
         {
@@ -301,7 +272,6 @@ public class GameObjectTracker
                 change.Event = ChangeEvent.Updated;
                 change.Transform.Pos = pos.Convert2d();
                 tracker.dirty = true;
-                //changeQueue.Enqueue(change);
             }
         }
         else
@@ -345,6 +315,4 @@ public class GameObjectTracker
     {
         Debug.Log(msg);
     }
-
-
 }

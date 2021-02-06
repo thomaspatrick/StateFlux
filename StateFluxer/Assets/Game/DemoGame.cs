@@ -27,8 +27,6 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     private StateFluxClient stateFluxClient;
 
     // object tracking
-    //private Dictionary<string, ChangeTracker> trackingMap;
-    //private Queue<Change2d> changeQueue;
     private GameObjectTracker gameObjectTracker;
 
     // used when running as a guest to determine if changed input should be sent to the server
@@ -69,8 +67,6 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     void Start()
     {
         gameObjectTracker = new GameObjectTracker();
-        //trackingMap = new Dictionary<string, ChangeTracker>();
-        //changeQueue = new Queue<Change2d>();
         lastGuestInput = new GuestInput();
         miceTracker = new MiceTracker();
 
@@ -102,13 +98,11 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         if (stateFluxClient.isHosting)
         {
             GameObject.Find("State_IsGuest").SetActive(false);
-            //StartCoroutine(nameof(SendStateAsHost));
             StartCoroutine(gameObjectTracker.SendStateAsHost());
         }
         else
         {
             GameObject.Find("State_IsHost").SetActive(false);
-            //StartCoroutine(gameObjectTracker.SweepStateAsGuest());
             StartCoroutine(nameof(SendInputAsGuest));
         }
     }
@@ -178,23 +172,27 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         {
             if(stateFluxClient.isHosting)
             {
-                HostCommandChangeMessage message = new HostCommandChangeMessage()
-                {
-                    Payload = new GameCommand
-                    {
-                        Name = "floobie",
-                        ObjectId = "test",
-                        Params = new Dictionary<string,string>()
-                    }
-                };
-                message.Payload.Params["foo"] = "bar";
-                stateFluxClient.SendRequest(message);
+                SendHostFloobieCommand();
             }
             ChangeTracker changeTracker = CreateJake(world, thisPlayer.Color);
-            //trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
-            //changeQueue.Enqueue(changeTracker.change);
             gameObjectTracker.TrackCreate(changeTracker);
         }
+    }
+
+    // send a dummy, placeholder command, when operating as the host
+    void SendHostFloobieCommand()
+    {
+        HostCommandChangeMessage message = new HostCommandChangeMessage()
+        {
+            Payload = new GameCommand
+            {
+                Name = "floobie",
+                ObjectId = "test",
+                Params = new Dictionary<string, string>()
+            }
+        };
+        message.Payload.Params["foo"] = "bar";
+        stateFluxClient.SendRequest(message);
     }
 
     void UpdateAsGuest()
@@ -225,72 +223,13 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         return new ChangeTracker { gameObject = jake, create = change };
     }
 
-
-    //private void EnqueuePosChangeAsHost(string objectId, Vector3 pos)
-    //{
-    //    if(trackingMap.TryGetValue(objectId, out ChangeTracker tracker))
-    //    {
-    //        //Debug.Log($"EnqueuePosChangeAsHost: found tracker object for {objectId}");
-    //        Change2d change = tracker.change;
-    //        if(change.Transform.Pos.X != pos.x || change.Transform.Pos.Y != pos.y)
-    //        {
-    //            //DebugLog($"EnqueuePosChangeAsHost: position changed for {objectId}, so queueing...", true);
-    //            change.Event = ChangeEvent.Updated;
-    //            change.Transform.Pos = pos.Convert2d();
-    //            changeQueue.Enqueue(change);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        Debug.Log($"EnqueuePosChangeAsHost: failed to track {objectId}");
-    //    }
-    //}
-
-    //private IEnumerator SendStateAsHost()
-    //{
-    //    while(true)
-    //    {
-    //        // send changes to mouse pos and tracked objects to the server, every 50 milliseconds
-    //        var changes = new List<Change2d>();
-    //        while (changeQueue.Count > 0)
-    //        {
-    //            changes.Add(changeQueue.Dequeue());
-    //        }
-
-    //        if(changes.Count > 0)
-    //        {
-    //            // the server forwards host state change messages to all guests
-    //            Message message = new HostStateChangeMessage()
-    //            {
-    //                Payload = new StateChange
-    //                {
-    //                    Changes = changes
-    //                }
-    //            };
-    //            stateFluxClient.SendRequest(message);
-    //        }
-
-    //        yield return new WaitForSeconds(.01f);
-    //    }
-    //}
-
     // called when the game is guest (not hosting), gathers and sends user input to host
     private void SendInputAsGuest()
     {
         bool clicked = Input.GetMouseButtonDown(0);
         if(clicked)
         {
-            GuestCommandChangeMessage message = new GuestCommandChangeMessage()
-            {
-                Payload = new GameCommand
-                {
-                    Name = "groovy",
-                    ObjectId = "testy",
-                    Params = new Dictionary<string, string>()
-                }
-            };
-            message.Payload.Params["bin"] = "baz";
-            stateFluxClient.SendRequest(message);
+            SendGuestGroovyCommand();
             clicked = false; // eat the click if a command is sent
         }
 
@@ -325,79 +264,26 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         }
     }
 
+    // send a dummy, placeholder command, when operating as guest
+    public void SendGuestGroovyCommand()
+    {
+        GuestCommandChangeMessage message = new GuestCommandChangeMessage()
+        {
+            Payload = new GameCommand
+            {
+                Name = "groovy",
+                ObjectId = "testy",
+                Params = new Dictionary<string, string>()
+            }
+        };
+        message.Payload.Params["bin"] = "baz";
+        stateFluxClient.SendRequest(message);
+    }
 
     // called when the game is guest (not hosting), contains state changes broadcast from the host
     public void OnStateFluxHostStateChanged(HostStateChangedMessage message)
     {
         gameObjectTracker.OnHostStateChanged(message);
-        //if (stateFluxClient.isHosting)
-        //{
-        //    DebugLog($"Host should not be receiving host state change messages! (Error)");
-        //    return;
-        //}
-
-        //foreach (var change in message.Payload.Changes)
-        //{
-        //    bool found = trackingMap.TryGetValue(change.ObjectID, out ChangeTracker tracker);
-
-        //    if (change.Event == ChangeEvent.Created)
-        //    {
-        //        if (found)
-        //        {
-        //            DebugLog($"Host has asked us to create object {change.ObjectID} that already exists. (Skipping)");
-        //            continue;
-        //        }
-
-        //        var createdGameObject = StateCreateGameObject(change, false);
-        //        trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, change = change };
-        //        DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
-        //    }
-        //    else if (change.Event == ChangeEvent.Destroyed)
-        //    {
-        //        if (!found)
-        //        {
-        //            DebugLog($"Host has asked us to destroy object {change.ObjectID} but it does not exist. (Skipping)", true);
-        //            continue;
-        //        }
-
-
-        //        if (tracker.gameObject == null) // unity supposedly overrides the behavior of == to return null for destroyed objects, even if they haven't been c# deleted yet
-        //        {
-        //            DebugLog($"Host has asked us to destroy object {change.ObjectID} but it has already been destroyed. (Skipping)");
-        //        }
-        //        else
-        //        {
-        //            DebugLog($"Destroying game object for {change.ObjectID}. (Should call OnTrackedObjectDestroy)");
-        //            GameObject.Destroy(tracker.gameObject);
-        //            DebugLog($"Destroyed game object for {change.ObjectID}. (Should have called OnTrackedObjectDestroy)");
-        //        }
-        //    }
-        //    else if (change.Event == ChangeEvent.Updated)
-        //    {
-        //        if (!found)
-        //        {
-        //            var createdGameObject = StateCreateGameObject(change, false);
-        //            tracker = trackingMap[change.ObjectID] = new ChangeTracker { gameObject = createdGameObject, change = change };
-        //            DebugLog($"Created tracker for {change.TypeID} - {change.ObjectID}.", true);
-        //            //DebugLog($"Host has asked us to update object {change.ObjectID} but it does not exist. (Skipping)", true);
-        //            //continue;
-        //        }
-
-        //        if (change?.Transform?.Pos == null)
-        //        {
-        //            DebugLog($"Host has asked us to update object {change.ObjectID} but it's transform pos does not exist. (Skipping)");
-        //            continue;
-        //        }
-
-        //        if (tracker.gameObject == null) // unity supposedly overrides the behavior of == to return null for destroyed objects, even if they haven't been c# deleted yet
-        //        {
-        //            DebugLog($"Host has asked us to update object {change.ObjectID} but it has already been destroyed. (Skipping)", true);
-        //            continue;
-        //        }
-
-        //        tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
-        //    }
-        //}
     }
 
     // called when the game is hosting, contains state updates sent from a guest
@@ -410,86 +296,19 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         {
             ChangeTracker changeTracker = CreateJake(message.Payload.mPos.Convert3d(), thatPlayer.Color);
             gameObjectTracker.TrackCreate(changeTracker);
-            //trackingMap.Add(changeTracker.change.ObjectID, changeTracker);
-            //changeQueue.Enqueue(changeTracker.change);
         }
     }
 
-    //// loads the prefab named the same as change.TypeID, applies caption, color & position
-    //private GameObject StateCreateGameObject(Change2d change, bool asHost)
-    //{
-    //    var prefabPath = $"{change.TypeID}";
-    //    DebugLog($"StateCreateGameObject is attempting to instantiate prefab '{prefabPath}' for '{change.ObjectID}'", true);
-    //    var obj = (GameObject)Instantiate(Resources.Load(prefabPath));
-    //    if(obj == null)
-    //    {
-    //        DebugLog($"StateCreateGameObject failed to instantiate prefab '{prefabPath}'", true);
-    //        return null;
-    //    }
-    //    obj.name = change.ObjectID;
-
-    //    string side = asHost ? "hostObject" : "guestObject";
-
-    //    if (change.Attributes.Color != null) SetObjectColor(obj, change.Attributes.Color);
-    //    SetObjectText(obj, $"{side}:{change.ObjectID}");
-    //    if (!asHost) 
-    //    {
-    //        var rigidbody =obj.GetComponent<Rigidbody2D>();
-    //        if(rigidbody != null)
-    //        {
-    //            // guest objects don't feel gravity
-    //            rigidbody.gravityScale = 0;
-    //        }
-
-    //        // guest objects don't destroy themselves, so remove KillMeOverTime
-    //        var killMeOverTime = obj.GetComponent<KillMeOverTime>();
-    //        if(killMeOverTime != null) Destroy(killMeOverTime);
-    //    }
-    //    obj.AddComponent<StateFluxTracked>();
-    //    obj.transform.position = change.Transform.Pos.Convert3d();
-
-    //    return obj;
-    //}
-
+    // called by the StateFluxTracked.cs script attached to our tracked gameobject
     public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity)
     {
         gameObjectTracker.OnTrackedObjectChange(name, pos, vel, eulerAngles, angularVelocity);
-        //if(trackingMap.TryGetValue(name, out ChangeTracker tracker))
-        //{
-        //    // don't send guest state changes to the host, guest sends input and commands instead
-        //    if(stateFluxClient.isHosting)
-        //    {
-        //        tracker.change.Event = ChangeEvent.Updated;
-        //        tracker.change.Transform.Pos = pos.Convert2d();
-        //        tracker.change.Transform.Vel = vel.Convert2d();
-        //        changeQueue.Enqueue(tracker.change);
-        //    }
-        //}
     }
 
+    // called by the StateFluxTracked.cs script attached to our tracked game object
     public void OnTrackedObjectDestroy(string name)
     {
         gameObjectTracker.OnTrackedObjectDestroy(name);
-        //if (trackingMap.TryGetValue(name, out ChangeTracker tracker))
-        //{
-        //    if(stateFluxClient.isHosting)
-        //    {
-        //        tracker.change.Event = ChangeEvent.Destroyed;
-        //        changeQueue.Enqueue(tracker.change);
-        //        DebugLog($"OnTrackedObjectDestroy, queued destroy change for '{name}'");
-        //    }
-        //    else
-        //    {
-        //        DebugLog($"OnTrackedObjectDestroy, removed tracker for '{name}'");
-        //    }
-        //    trackingMap.Remove(name);
-        //    DebugLog($"Removed tracker for {name}.");
-
-        //}
-        //else
-        //{
-        //    DebugLog($"OnTrackedObjectDestroy, failed to look up tracking map for '{name}'");
-        //}
     }
 
     public void OnStateFluxInitialize()
@@ -586,6 +405,7 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         if (textMesh != null) textMesh.text = newText;
     }
 
+    
     public void OnStateFluxHostCommandChanged(HostCommandChangedMessage message)
     {
         DebugLog(message.Payload.Params["foo"]);
@@ -605,7 +425,7 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         }
     }
 
-    public void SetPlayerMouseDetails(Mouse m)
+    private void SetPlayerMouseDetails(Mouse m)
     {
         if(m.PlayerId == playerId)
         {
