@@ -320,7 +320,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxWaitingToConnect()
     {
-        //DebugLog("OnStateFluxWaitingToConnect");
+        DebugLog("OnStateFluxWaitingToConnect");
         StartCoroutine(ActivateConnectionPanel());
     }
 
@@ -336,15 +336,8 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxDisconnect()
     {
         DebugLog("OnStateFluxDisconnect!");
+        
         StartCoroutine(ActivateConnectionPanel());
-    }
-
-    public void OnStateFluxHostStateChanged(HostStateChangedMessage message)
-    {
-    }
-
-    public void OnStateFluxGuestInputChanged(GuestInputChangedMessage message)
-    {
     }
 
     public void OnStateFluxPlayerListing(PlayerListingMessage message)
@@ -437,6 +430,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         DebugLog("OnStateFluxGameInstanceJoined!");
     }
+
     public void OnStateFluxGameInstanceStart(GameInstanceStartMessage message)
     {
         DebugLog("OnStateFluxGameInstanceStart!");
@@ -451,49 +445,30 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             SceneManager.LoadScene("PlaceholderGame");
         else
         {
-
+            // unknown game
         }
         SceneManager.LoadScene("DemoTile");
     }
 
     public void OnClickGameInstance(string buttonName)
     {
-        if(!_hostingGame)
-        {
-            string[] parts = buttonName.Split(new char[] { '.' });
-            string gameInstanceId = parts[1];
-            GameInstance gameInstance = _games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
-            var canvasGroup = _joinGamePanel.GetComponent<CanvasGroup>();
-            canvasGroup.alpha = 1;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            var txt = _joinGamePanelText.GetComponent<Text>();
-            txt.text = $"Join {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
-            _maybeJoinThisGameInstance = gameInstance;
-        }
-        else
-        {
-            string[] parts = buttonName.Split(new char[] { '.' });
-            string gameInstanceId = parts[1];
-            GameInstance gameInstance = _games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
-            var canvasGroup = _leaveGamePanel.GetComponent<CanvasGroup>();
-            canvasGroup.alpha = 1;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-            var txt = _leaveGamePanelText.GetComponent<Text>();
-            txt.text = $"Leave {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
-            _maybeJoinThisGameInstance = gameInstance;
-        }
+        GameObject panel = _hostingGame ? _leaveGamePanel : _joinGamePanel;
+        GameObject panelText = _hostingGame ? _leaveGamePanelText : _joinGamePanelText;
+
+        string[] parts = buttonName.Split(new char[] { '.' });
+        string gameInstanceId = parts[1];
+        GameInstance gameInstance = _games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
+        ShowPanel(panel, null, true);
+        var txt = panelText.GetComponent<Text>();
+        txt.text = $"Join {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
+        _maybeJoinThisGameInstance = gameInstance;
     }
 
     public void OnClickJoinGame()
     {
         if(!_hostingGame)
         {
-            var canvasGroup = _joinGamePanel.GetComponent<CanvasGroup>();
-            canvasGroup.alpha = 0;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
+            ShowPanel(_joinGamePanel, null, false);
             DebugLog($"Requested join game instance {_maybeJoinThisGameInstance.Name}");
             StateFluxClient.Instance.SendRequest(new JoinGameInstanceMessage { GameName = _maybeJoinThisGameInstance.Game.Name, InstanceName = _maybeJoinThisGameInstance.Name });
         }
@@ -501,15 +476,11 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         {
             DebugLog("Join game request supressed because you are hosting a game");
         }
-
     }
 
     public void OnClickDismissJoinGame()
     {
-        var canvasGroup = _joinGamePanel.GetComponent<CanvasGroup>();
-        canvasGroup.alpha = 0;
-        canvasGroup.interactable = false;
-        canvasGroup.blocksRaycasts = false;
+        ShowPanel(_joinGamePanel, null, false);
     }
 
     public void OnClickLeaveGame()
@@ -519,15 +490,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     }
     public void OnClickDismissLeaveGame()
     {
-        var canvasGroup = _leaveGamePanel.GetComponent<CanvasGroup>();
-        canvasGroup.alpha = 0;
-        canvasGroup.interactable = false;
-        canvasGroup.blocksRaycasts = false;
-    }
-
-    public void OnStateFluxOtherMessage(Message message)
-    {
-        DebugLog($"OnStateFluxOtherMessage - {message.MessageType}!");
+        ShowPanel(_leaveGamePanel, null, false);
     }
 
     public void OnStateFluxServerError(ServerErrorMessage message)
@@ -563,5 +526,18 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxMiceChanged(MiceChangedMessage msg)
     {
+    }
+
+    public void OnStateFluxHostStateChanged(HostStateChangedMessage message)
+    {
+    }
+
+    public void OnStateFluxGuestInputChanged(GuestInputChangedMessage message)
+    {
+    }
+
+    public void OnStateFluxOtherMessage(Message message)
+    {
+        DebugLog($"OnStateFluxOtherMessage - {message.MessageType}!");
     }
 }

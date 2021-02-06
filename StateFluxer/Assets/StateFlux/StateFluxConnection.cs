@@ -122,6 +122,7 @@ namespace StateFlux.Client
                     ProcessMessages();
                 }
             }
+            Start();
         }
 
         private void ProcessMessages()

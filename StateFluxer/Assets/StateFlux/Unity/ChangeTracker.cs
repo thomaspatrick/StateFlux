@@ -9,10 +9,14 @@ using UnityEngine;
 namespace StateFlux.Unity
 {
     public enum ChangeTrackerSource { Host, Guest };
-    class ChangeTracker
+    public class ChangeTracker
     {
         public ChangeTrackerSource source { get; set; }
-        public Change2d change { get; set; }
+
+        public Change2d create { get; set; }
+        public Change2d update { get; set; }
+        public Change2d destroy { get; set; }
         public GameObject gameObject { get; set; }
+        public bool dirty { get; set; }
     }
 }

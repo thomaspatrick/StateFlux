@@ -55,7 +55,7 @@ namespace StateFlux.Service
             if (string.IsNullOrEmpty(sessionCookieValue)) return null;
 
             Player player = Server.Instance.Players.FirstOrDefault(p => p.SessionData.SessionId == sessionCookieValue);
-            if(attemptLoadIfNoSession && player == null)
+            if (attemptLoadIfNoSession && player == null)
             {
                 // not an active player - check database?
                 LogMessage($"Session cookie '{sessionCookieValue}' not found in player list", false);
@@ -69,11 +69,6 @@ namespace StateFlux.Service
                         player = found;
                         player.GameInstanceRef = null;
                         Server.Instance.Players.Add(player);
-                    }
-                    else
-                    {
-                        string msg = $"Connected user provided an unknown session cookie '{sessionCookieValue}' (not found in database)!";
-                        throw new Exception(msg);
                     }
                 }
             }
@@ -229,7 +224,7 @@ namespace StateFlux.Service
                 {
                     Players = Server.Instance.Players.Where(p => p.SessionData.SessionId != currentPlayer.SessionData.SessionId).ToList()
                 };
-                Broadcast(playerListingMessage, null, true);
+                Broadcast(playerListingMessage, null, false);
 
                 if(currentPlayer.GameInstanceRef != null)
                 {
@@ -239,7 +234,7 @@ namespace StateFlux.Service
                         GameInstance = currentPlayer.GameInstanceRef,
                         Host = Server.Instance.LookupInstance(currentPlayer.GameInstanceRef.Id).HostPlayer
                     };
-                    Broadcast(gameInstanceStoppedMessage, null, true);
+                    Broadcast(gameInstanceStoppedMessage, null, false);
                 }
 
                 Server.Instance.RemoveGameInstance(currentPlayer);
@@ -265,6 +260,8 @@ namespace StateFlux.Service
                 string pname = (player != null) ? player.Name : "unknown";
                 if (message.MessageType != MessageTypeNames.HostStateChange && 
                     message.MessageType != MessageTypeNames.GuestInputChange &&
+                    message.MessageType != MessageTypeNames.GuestCommandChange &&
+                    message.MessageType != MessageTypeNames.HostCommandChange &&
                     message.MessageType != MessageTypeNames.MiceChange)
                 {
                     LogMessage($"OnMessage.Processing {message.MessageType} from {pname}");

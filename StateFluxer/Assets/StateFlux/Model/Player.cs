@@ -22,7 +22,6 @@ namespace StateFlux.Model
         public string[] Sval { get; set; }
         public DateTime? LastUpdated { get; set; }
         public GameInstanceRef GameInstanceRef { get; set; }
-        [JsonIgnore]
         public PlayerSessionData SessionData { get; set; }
     }
 
