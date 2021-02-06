@@ -28,8 +28,9 @@ namespace StateFlux.Unity
             {
                 Vector3 vel = (_rigidBody != null) ? _rigidBody.velocity : Vector2.zero;
                 float angularVelocity = (_rigidBody != null) ? _rigidBody.angularVelocity : 0f;
+                float scale = transform.localScale.y; // assumes same scaling on x and y
 
-                _listener?.OnTrackedObjectChange(name, transform.position, vel, transform.eulerAngles, angularVelocity );
+                _listener?.OnTrackedObjectChange(name, transform.position, vel, transform.eulerAngles, angularVelocity, scale);
                 transform.hasChanged = false;
             }
         }

@@ -133,6 +133,7 @@ namespace StateFlux.Unity
 
             obj.transform.position = change.Transform.Pos.Convert3d();
             obj.transform.eulerAngles = new Vector3(0, 0, change.Transform.Rot);
+            obj.transform.localScale = new Vector2(change.Transform.Scale,change.Transform.Scale);
             Rigidbody2D rb = obj.GetComponent<Rigidbody2D>();
             if (rb != null)
             {
@@ -212,6 +213,7 @@ namespace StateFlux.Unity
 
                     tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
                     tracker.gameObject.transform.eulerAngles = new Vector3(0, 0, change.Transform.Rot);
+                    tracker.gameObject.transform.localScale = new Vector2(change.Transform.Scale,change.Transform.Scale);
                     Rigidbody2D rb = tracker.gameObject.GetComponent<Rigidbody2D>();
                     if (rb != null)
                     {
@@ -222,7 +224,7 @@ namespace StateFlux.Unity
             }
         }
 
-        public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity)
+        public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity, float scale)
         {
             if (trackingMap.TryGetValue(name, out ChangeTracker tracker))
             {
@@ -240,6 +242,7 @@ namespace StateFlux.Unity
                     tracker.update.Transform.Vel = vel.Convert2d();
                     tracker.update.Transform.Rot = eulerAngles.z;
                     tracker.update.Transform.RotV = angularVelocity;
+                    tracker.update.Transform.Scale = scale;
                     tracker.dirty = true;
                 }
             }

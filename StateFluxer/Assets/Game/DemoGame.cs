@@ -212,7 +212,8 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
                 Pos = mousePoint.Convert2d(),
                 Vel = new Vec2d { X = 0, Y = 0 },
                 Rot = 0, //UnityEngine.Random.value * 720.0f - 360.0f,
-                RotV = UnityEngine.Random.value * 100.0f - 50.0f
+                RotV = UnityEngine.Random.value * 100.0f - 50.0f,
+                Scale = UnityEngine.Random.value
             },
             Attributes = new StateFlux.Model.Attributes
             {
