@@ -10,6 +10,12 @@ namespace StateFlux.Unity
     class StateFluxTracked : MonoBehaviour
     {
         private Rigidbody2D _rigidBody;
+        private IGameObjectTrackingListener _listener;
+
+        public void SetListener(IGameObjectTrackingListener listener)
+        {
+            _listener = listener;
+        }
 
         void Update()
         {
@@ -23,14 +29,14 @@ namespace StateFlux.Unity
                 Vector3 vel = (_rigidBody != null) ? _rigidBody.velocity : Vector2.zero;
                 float angularVelocity = (_rigidBody != null) ? _rigidBody.angularVelocity : 0f;
 
-                DemoGame.Instance.OnTrackedObjectChange(name, transform.position, vel, transform.eulerAngles, angularVelocity );
+                _listener?.OnTrackedObjectChange(name, transform.position, vel, transform.eulerAngles, angularVelocity );
                 transform.hasChanged = false;
             }
         }
 
         void OnDestroy()
         {
-            DemoGame.Instance.OnTrackedObjectDestroy(name);
+            _listener?.OnTrackedObjectDestroy(name);
         }
     }
 }

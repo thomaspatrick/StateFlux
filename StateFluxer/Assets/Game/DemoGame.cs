@@ -299,18 +299,6 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         }
     }
 
-    // called by the StateFluxTracked.cs script attached to our tracked gameobject
-    public void OnTrackedObjectChange(string name, Vector3 pos, Vector3 vel, Vector3 eulerAngles, float angularVelocity)
-    {
-        gameObjectTracker.OnTrackedObjectChange(name, pos, vel, eulerAngles, angularVelocity);
-    }
-
-    // called by the StateFluxTracked.cs script attached to our tracked game object
-    public void OnTrackedObjectDestroy(string name)
-    {
-        gameObjectTracker.OnTrackedObjectDestroy(name);
-    }
-
     public void OnStateFluxInitialize()
     {
     }
