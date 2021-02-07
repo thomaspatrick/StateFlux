@@ -42,6 +42,7 @@ namespace StateFlux.Model
     {
         public string ObjectID { get; set; }
         public string TypeID { get; set; }
+        public string ParentID { get; set; }
         public ChangeEvent Event { get; set; }
         public Transform2d Transform { get; set; }
         public Measures Measures { get; set; }

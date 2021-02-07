@@ -111,6 +111,13 @@ namespace StateFlux.Unity
             }
             obj.name = change.ObjectID;
 
+            if (!String.IsNullOrEmpty(change.ParentID))
+            {
+                GameObject parent = GameObject.Find(change.ParentID);
+                obj.transform.parent = parent?.transform;
+                DebugLog($"Parented {change.ParentID}");
+            }
+
             string side = asHost ? "hostObject" : "guestObject";
 
             if (change.Attributes.Color != null) SetObjectColor(obj, change.Attributes.Color);

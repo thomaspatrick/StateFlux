@@ -27,7 +27,7 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     private StateFluxClient stateFluxClient;
 
     // object tracking
-    private GameObjectTracker gameObjectTracker;
+    public static GameObjectTracker gameObjectTracker;
 
     // used when running as a guest to determine if changed input should be sent to the server
     private GuestInput lastGuestInput;
@@ -37,6 +37,8 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     private GameObject thisMouse, thatMouse;
     public GameObject mousePrefab;
     public GameObject jakePrefab;
+
+    public GameObject circler;
 
     private Player thisPlayer = null;
     private Player thatPlayer = null;
@@ -168,13 +170,13 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
             }
         }
 
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0))
         {
             if(stateFluxClient.isHosting)
             {
                 SendHostFloobieCommand();
             }
-            ChangeTracker changeTracker = CreateJake(world, thisPlayer.Color);
+            ChangeTracker changeTracker = CreateJake(world, thisPlayer.Color, circler);
             gameObjectTracker.TrackCreate(changeTracker);
         }
     }
@@ -200,13 +202,14 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         SendInputAsGuest();
     }
 
-    private ChangeTracker CreateJake(Vector3 mousePoint, StateFlux.Model.Color color)
+    private ChangeTracker CreateJake(Vector3 mousePoint, StateFlux.Model.Color color, GameObject parent = null)
     {
         var change = new StateFlux.Model.Change2d
         {
             Event = ChangeEvent.Created,
             ObjectID = "jake" + ShortGuid.Generate(),
             TypeID = "jake",
+            ParentID = parent?.name, 
             Transform = new Transform2d
             {
                 Pos = mousePoint.Convert2d(),
@@ -295,7 +298,7 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
 
         if(message.Payload.mClicked)
         {
-            ChangeTracker changeTracker = CreateJake(message.Payload.mPos.Convert3d(), thatPlayer.Color);
+            ChangeTracker changeTracker = CreateJake(message.Payload.mPos.Convert3d(), thatPlayer.Color, circler);
             gameObjectTracker.TrackCreate(changeTracker);
         }
     }
