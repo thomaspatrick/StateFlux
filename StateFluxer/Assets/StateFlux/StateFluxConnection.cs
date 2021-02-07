@@ -29,7 +29,8 @@ namespace StateFlux.Client
         private PlayerClientInfo _currentPlayer;
         private WebSocket _webSocket;
         private Task _task;
-        private bool ShouldExit { get; set; }
+        private bool ShouldRestart { get; set; }
+        private bool ShouldShutdown { get; set; }
         private readonly ConcurrentQueue<Message> _requests = new ConcurrentQueue<Message>();
         private readonly ConcurrentQueue<Message> _responses = new ConcurrentQueue<Message>();
 
@@ -90,18 +91,27 @@ namespace StateFlux.Client
             _task.Start();
         }
 
-        public void Stop()
+        public void Restart()
         {
             lock(this)
             {
-                ShouldExit = true;
+                ShouldRestart = true;
             }
-            Log("Stop called...");
+            Log("Restart called...");
+        }
+
+        public void Shutdown()
+        {
+            lock (this)
+            {
+                ShouldShutdown = true;
+            }
+            Log("Shutdown called...");
         }
 
         private void MainAction()
         {
-            while(!ShouldExit)
+            while(!ShouldRestart && !ShouldShutdown)
             {
                 bool needsAuth = (_currentPlayer == null);
 
@@ -122,12 +132,17 @@ namespace StateFlux.Client
                     ProcessMessages();
                 }
             }
-            Start();
+            if(!ShouldShutdown && ShouldRestart)
+            {
+                ShouldRestart = false;
+                Log("Restarting the connection loop...");
+                Start();
+            }
         }
 
         private void ProcessMessages()
         {
-            Log($"Starting ProcessMessages as {_currentPlayer.Name} with sessionId = {_currentPlayer.SessionId}");
+            Log($"Starting ProcessMessages as {_currentPlayer.Name}({_currentPlayer.Id}) with sessionId = {_currentPlayer.SessionId}");
 
             WebSocketSharp.ErrorEventArgs errorEventArgs = null;
             try
@@ -153,7 +168,7 @@ namespace StateFlux.Client
                             {
                                 ResetSavedSession();
                                 _webSocket.Close();
-                                ShouldExit = true;
+                                ShouldRestart = true;
                             }
                         }
                     };
@@ -163,7 +178,7 @@ namespace StateFlux.Client
                         lock (this)
                         {
                             if (!e.WasClean) ResetSavedSession();
-                            ShouldExit = true;
+                            ShouldRestart = true;
                         }
                     };
 
@@ -203,7 +218,7 @@ namespace StateFlux.Client
             }
 
 
-            while (!ShouldExit && ReadyState == WebSocketState.Open)
+            while (!ShouldShutdown && !ShouldRestart && ReadyState == WebSocketState.Open)
             {
 
                 try
@@ -367,6 +382,7 @@ namespace StateFlux.Client
                     }
                     AuthAttemptEvent?.Invoke(RequestedUsername, Endpoint);
                     _webSocket = new WebSocket(Endpoint);
+                    _webSocket.OnOpen += HandleAuthOpen;
                     _webSocket.OnMessage += HandleAuthResponseMessage;
                     _webSocket.OnError += HandleAuthResponseError;
                     _webSocket.Connect();
@@ -390,11 +406,12 @@ namespace StateFlux.Client
                     PlayerName = RequestedUsername
                 };
                 string msg = JsonConvert.SerializeObject(requestMessage);
-                lock(this)
+                lock (this)
                 {
-                    if(_webSocket != null)
+                    if (_webSocket != null)
                     {
                         _webSocket.Send(msg);
+                        Log($"Sent AuthenticateMessage request: {msg}");
                     }
                 }
 
@@ -412,18 +429,25 @@ namespace StateFlux.Client
                 AuthFailureEvent?.Invoke(e.Message);
             }
 
-            lock(this)
-            {
-                _webSocket.Close();
-                _webSocket = null;
-            }
+//            lock(this)
+//            {
+////                _webSocket.Close();
+////                _webSocket = null;
+//            }
 
             return (_currentPlayer != null);
+        }
+
+        private void HandleAuthOpen(object source, EventArgs e)
+        {
+            Log("HandleAuthOpen");
         }
 
         private void HandleAuthResponseError(object source, WebSocketSharp.ErrorEventArgs e)
         {
             AuthFailureEvent?.Invoke(e?.Exception.GetBaseException()?.Message ?? e.Message);
+            _webSocket.Close();
+            _webSocket = null;
         }
 
         private void HandleAuthResponseMessage(object source, MessageEventArgs e)
@@ -441,10 +465,8 @@ namespace StateFlux.Client
             if (authenticated.Status != AuthenticationStatus.Authenticated)
             {
                 string err = $"Player login rejected ({authenticated.Status}), message= '{authenticated.StatusMessage}'";
-                Log(err);
-                ResetSavedSession();
                 OnServerError(new ServerErrorMessage { Error = err });
-                ShouldExit = true;
+                ShouldRestart = true;
                 throw new Exception(err);
             }
 
@@ -458,6 +480,7 @@ namespace StateFlux.Client
 
             SaveSession();
             AuthSuccessEvent?.Invoke(_currentPlayer.Name,_currentPlayer.SessionId,_currentPlayer.Id);
+            _webSocket.Close();
         }
 
         private void SaveSession()

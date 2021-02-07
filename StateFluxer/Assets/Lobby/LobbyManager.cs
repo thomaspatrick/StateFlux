@@ -186,12 +186,13 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         ShowPanel(connection, _modalBackgroundPanel, false);
         ShowPanel(login, null, true);
         var field = _userNameInputField.GetComponent<InputField>();
-        if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
-        else
-        {
-            LastUsername = "NameError" + new System.Random().Next();
-            field.text = LastUsername;
-        }
+        field.text = LastUsername;
+        //if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
+        //else
+        //{
+        //    LastUsername = "NameError" + new System.Random().Next();
+        //    field.text = LastUsername;
+        //}
         EventSystem.current.SetSelectedGameObject(_userNameInputField);
         field.ActivateInputField();
     }
@@ -247,8 +248,15 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnClickToConnect()
     {
         LastUsername = StateFluxClient.Instance.userName = GetLoginUsername();
-        DebugLog($"LobbyManager.OnClickToConnect as {LastUsername}");
-        StateFluxClient.Instance.Login();
+        if(String.IsNullOrWhiteSpace(LastUsername))
+        {
+            DebugLog($"LobbyManager.OnClickToConnect no username!");
+        }
+        else
+        {
+            DebugLog($"LobbyManager.OnClickToConnect as {LastUsername}");
+            StateFluxClient.Instance.Login();
+        }
     }
 
     public void OnClickToCreateGame()
@@ -337,7 +345,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         DebugLog("OnStateFluxDisconnect!");
         
-        StartCoroutine(ActivateConnectionPanel());
+        //StartCoroutine(ActivateConnectionPanel());
     }
 
     public void OnStateFluxPlayerListing(PlayerListingMessage message)
