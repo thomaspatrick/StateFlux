@@ -57,19 +57,14 @@ namespace StateFlux.Service
             Player player = Server.Instance.Players.FirstOrDefault(p => p.SessionData.SessionId == sessionCookieValue);
             if (attemptLoadIfNoSession && player == null)
             {
-                // not an active player - check database?
-                LogMessage($"Session cookie '{sessionCookieValue}' not found in player list", false);
-                if (sessionCookieValue != null)
+                // not an active player - check database and activate
+                Player found = Server.Instance.playerRepository.GetAllPlayers().FirstOrDefault(p => p.SessionData?.SessionId == sessionCookieValue);
+                if (found != null)
                 {
-                    Player found = Server.Instance.playerRepository.GetAllPlayers().FirstOrDefault(p => p.SessionData?.SessionId == sessionCookieValue);
-                    if (found != null)
-                    {
-                        // add player to active list
-                        LogMessage($"Activating player {found.Name} from database that matches session cookie '{sessionCookieValue}'", false);
-                        player = found;
-                        player.GameInstanceRef = null;
-                        Server.Instance.Players.Add(player);
-                    }
+                    LogMessage($"Activating player from database session {sessionCookieValue} ({found.Name})", false);
+                    player = found;
+                    player.GameInstanceRef = null;
+                    Server.Instance.Players.Add(player);
                 }
             }
             return player;

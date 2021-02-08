@@ -102,7 +102,7 @@ public class StateFluxClient : MonoBehaviour
     {
         if(connection != null)
         {
-            connection.Restart();
+            connection.Shutdown();
         }
 
         connection = new StateFluxConnection
@@ -178,8 +178,8 @@ public class StateFluxClient : MonoBehaviour
         ClearSavedSessionFile();
         if (connection != null)
         {
-            Debug.Log($"Restarting connection loop");
-            connection.Restart();
+            Debug.Log($"Shuttind down connection loop");
+            connection.Shutdown();
         }
     }
 
