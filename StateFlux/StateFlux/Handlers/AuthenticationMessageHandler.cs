@@ -29,6 +29,7 @@ namespace StateFlux.Service
             try
             {
                 player = _websocket.GetCurrentSessionPlayer();
+                player.Color = message.PlayerColor;
             }
             catch(Exception e)
             {
@@ -49,6 +50,7 @@ namespace StateFlux.Service
 
             response.PlayerId = player.Id.ToString();
             response.PlayerName = player.Name;
+            response.PlayerColor = player.Color;
             response.SessionId = player.SessionData.SessionId;
             _websocket.LogMessage($"Player authenticated: {JsonConvert.SerializeObject(response)}");
             return response;

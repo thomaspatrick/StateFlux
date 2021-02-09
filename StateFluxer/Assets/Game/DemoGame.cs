@@ -99,12 +99,18 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
 
         if (stateFluxClient.isHosting)
         {
-            GameObject.Find("State_IsGuest").SetActive(false);
+            var g = GameObject.Find("State_IsGuest");
+            g.SetActive(false);
+            var textMesh = g.GetComponentInChildren<TextMesh>();
+            if (textMesh != null) textMesh.color = StateFluxTypeConvert.Convert(thisPlayer.Color);
             StartCoroutine(gameObjectTracker.SendStateAsHost());
         }
         else
         {
-            GameObject.Find("State_IsHost").SetActive(false);
+            var g = GameObject.Find("State_IsHost");
+            g.SetActive(false);
+            var textMesh = g.GetComponentInChildren<TextMesh>();
+            if (textMesh != null) textMesh.color = StateFluxTypeConvert.Convert(thisPlayer.Color);
             StartCoroutine(nameof(SendInputAsGuest));
         }
     }

@@ -36,6 +36,7 @@ namespace StateFlux.Client
 
         public string UserName { get; set; }
         public string RequestedUsername { get; set; }
+        public Model.Color RequestedPlayerColor { get; set; }
         public string SessionSaveFilename { get; set; }
         public string Endpoint { get; set; }
 
@@ -403,7 +404,8 @@ namespace StateFlux.Client
 
                 AuthenticateMessage requestMessage = new AuthenticateMessage
                 {
-                    PlayerName = RequestedUsername
+                    PlayerName = RequestedUsername,
+                    PlayerColor = RequestedPlayerColor
                 };
                 string msg = JsonConvert.SerializeObject(requestMessage);
                 lock (this)
@@ -474,6 +476,7 @@ namespace StateFlux.Client
             {
                 Id = authenticated.PlayerId,
                 Name = authenticated.PlayerName,
+                Color = authenticated.PlayerColor,
                 SessionId = authenticated.SessionId
             };
             UserName = _currentPlayer.Name;

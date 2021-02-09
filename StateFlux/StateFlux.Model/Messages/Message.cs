@@ -16,6 +16,7 @@ namespace StateFlux.Model
         }
 
         public string PlayerName { get; set; }
+        public Color PlayerColor { get; set; }
     }
 
     public enum AuthenticationStatus { Authenticated, BadUser, BadPassword };
@@ -30,6 +31,7 @@ namespace StateFlux.Model
         public string StatusMessage { get; set; }
         public string PlayerId { get; set; }
         public string PlayerName { get; set; }
+        public Color PlayerColor { get; set; }
         public string SessionId { get; set; }
     }
 

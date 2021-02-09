@@ -253,11 +253,13 @@ namespace StateFlux.Service
 
                 Player player = this.GetCurrentSessionPlayer();
                 string pname = (player != null) ? player.Name : "unknown";
-                if (message.MessageType != MessageTypeNames.HostStateChange && 
+                bool verbose = (message.MessageType != MessageTypeNames.HostStateChange &&
                     message.MessageType != MessageTypeNames.GuestInputChange &&
                     message.MessageType != MessageTypeNames.GuestCommandChange &&
                     message.MessageType != MessageTypeNames.HostCommandChange &&
-                    message.MessageType != MessageTypeNames.MiceChange)
+                    message.MessageType != MessageTypeNames.MiceChange);
+
+                if(verbose)
                 {
                     LogMessage($"OnMessage.Processing {message.MessageType} from {pname}");
                 }
@@ -266,9 +268,7 @@ namespace StateFlux.Service
                 {
                     Respond(responseMessage);
                 }
-                if(message.MessageType != MessageTypeNames.HostStateChange 
-                    && message.MessageType != MessageTypeNames.GuestInputChange
-                    && message.MessageType != MessageTypeNames.MiceChange)
+                if(verbose)
                 {
                     LogMessage($"OnMessage.Processed {message.MessageType} from {pname}");
                 }

@@ -11,6 +11,7 @@ using System.Text;
 using System.Linq;
 using UnityEngine.SceneManagement;
 using System;
+using StateFlux.Unity;
 
 public class LobbyManager : MonoBehaviour, IStateFluxListener
 {
@@ -248,6 +249,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnClickToConnect()
     {
         LastUsername = StateFluxClient.Instance.userName = GetLoginUsername();
+        StateFluxClient.Instance.requestedPlayerColor = ColorSequence.Next();
         if(String.IsNullOrWhiteSpace(LastUsername))
         {
             DebugLog($"LobbyManager.OnClickToConnect no username!");
@@ -358,7 +360,10 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
             GameObject row = GameObject.Instantiate(playerRowPrefab, _playersPanelContent.transform);
             var textMeshPro = row.GetComponentInChildren<TextMeshProUGUI>();
             textMeshPro.text = p.Name;
-
+            if(p.Color != null)
+            {
+                textMeshPro.color = StateFluxTypeConvert.Convert(p.Color);
+            }
         }
     }
 

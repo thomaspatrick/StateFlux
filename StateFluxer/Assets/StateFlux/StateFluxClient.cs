@@ -23,6 +23,7 @@ public class StateFluxClient : MonoBehaviour
 
     [HideInInspector]
     public string userName;
+    public StateFlux.Model.Color requestedPlayerColor;
     [HideInInspector]
     public bool connected;
     public bool openWithIdentity;
@@ -109,7 +110,8 @@ public class StateFluxClient : MonoBehaviour
         {
             SessionSaveFilename = sessionFile,
             Endpoint = endpoint,
-            RequestedUsername = userName
+            RequestedUsername = userName,
+            RequestedPlayerColor = this.requestedPlayerColor
         };
 
         connection.AuthAttemptEvent += OnAuthAttemptEvent;

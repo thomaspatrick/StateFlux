@@ -1,28 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using StateFlux.Model;
 
-namespace StateFlux.Model
+namespace StateFlux.Unity
 {
     public class ColorSequence
     {
         static private List<Color> colors = new List<Color>
         {
             { new Color { Red=1, Green=0, Blue=0, Alpha=1 } },
-            { new Color { Red=0, Green=0.7f, Blue=0, Alpha=1 } },
+            { new Color { Red=0, Green=1, Blue=0, Alpha=1 } },
             { new Color { Red=0, Green=0, Blue=1, Alpha=1 } },
             { new Color { Red=1, Green=1, Blue=0, Alpha=1 } },
             { new Color { Red=1, Green=0, Blue=1, Alpha=1 } },
             { new Color { Red=0, Green=1, Blue=1, Alpha=1 } },
             { new Color { Red=1, Green=1, Blue=1, Alpha=1 } }
         };
-        static private int index = 0;
 
         static public Color Next()
         {
-            Color c = colors[index++];
-            index = index > (colors.Count - 1) ? 0 : index;
-            return c;
+            int index = (int)Math.Round(UnityEngine.Random.value * 6.0f);
+            return colors[index];
         }
     }
 }
