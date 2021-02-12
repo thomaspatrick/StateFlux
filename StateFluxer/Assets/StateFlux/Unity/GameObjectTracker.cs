@@ -124,7 +124,8 @@ namespace StateFlux.Unity
             SetObjectText(obj, $"{side}:{change.ObjectID}");
             if (!asHost)
             {
-                //var rigidbody = obj.GetComponent<Rigidbody2D>();
+                var rigidbody = obj.GetComponent<Rigidbody2D>();
+                GameObject.Destroy(rigidbody);
                 //if (rigidbody != null)
                 //{
                 //    // guest objects don't feel gravity
@@ -218,7 +219,13 @@ namespace StateFlux.Unity
                         continue;
                     }
 
-                    tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
+                    var tracked = tracker.gameObject.GetComponent<StateFluxTracked>();
+                    if(tracked != null)
+                    {
+                        tracked.SetGoal(change.Transform.Pos.Convert3d());
+                    }
+
+                    //tracker.gameObject.transform.position = change.Transform.Pos.Convert3d();
                     tracker.gameObject.transform.eulerAngles = new Vector3(0, 0, change.Transform.Rot);
                     tracker.gameObject.transform.localScale = new Vector2(change.Transform.Scale,change.Transform.Scale);
                     Rigidbody2D rb = tracker.gameObject.GetComponent<Rigidbody2D>();

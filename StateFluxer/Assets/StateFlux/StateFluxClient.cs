@@ -28,6 +28,7 @@ public class StateFluxClient : MonoBehaviour
     public bool connected;
     public bool openWithIdentity;
     public string endpoint;
+    public string otherEndpoint;
     [HideInInspector]
     public bool hasSavedSession;
     [HideInInspector]
