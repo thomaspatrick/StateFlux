@@ -36,15 +36,7 @@ namespace StateFlux.Service
             Players = new List<Player>();
             Games = new List<Game>();
             Chat = new List<ChatSaid>();
-
-            Game game = new Game
-            {
-                Name = "AssetCollapse",
-                Description = "Asset Collapse Game",
-                MinPlayers = 2
-            };
-            Games.Add(game);
-            _timer = new Timer(this.Tick, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+            _timer = new Timer(this.Tick, null, TimeSpan.Zero, TimeSpan.FromSeconds(2));
         }
 
         public GameInstance HostGameInstance(Player hostPlayer, Game game, string gameInstanceName)
@@ -121,7 +113,7 @@ namespace StateFlux.Service
                 Host = gameInstance.HostPlayer,
                 Guests = gameInstance.Players
             };
-            BroadcastSystemMessage(startMessage);
+                BroadcastSystemMessage(startMessage);
         }
 
         private void Tick(object state)

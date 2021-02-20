@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using StateFlux.Client;
 using StateFlux.Model;
 using StateFlux.Unity;
+using Newtonsoft.Json;
 
 public class DemoGame : MonoBehaviour, IStateFluxListener
 {
@@ -56,13 +57,13 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
 
         if (_instance != null && _instance != this)
         {
-            Debug.Log("GameManage blocking double instantiate");
+            Debug.Log("DemoGame blocking double instantiate");
             Destroy(this.gameObject);
         }
         else
         {
             _instance = this;
-            Debug.Log("GameManage is Awake");
+            Debug.Log("DemoGame is Awake");
         }
     }
 
@@ -135,10 +136,12 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         //mousePos.y = cam.pixelHeight - currentEvent.mousePosition.y;
         //Vector3 point = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, cam.nearClipPlane));
 
-        GUILayout.BeginArea(new Rect(20, 20, 250, 520));
+        GUILayout.BeginArea(new Rect(20, 400, 250, 520));
         GUILayout.Label($"Player Id: {playerId} {(stateFluxClient.isHosting ? "(Host)" : "(Guest)")}");
         //GUILayout.Label("Items in tracking map: " + trackingMap.Count);
         GUILayout.Label("Items in tracking map: " + gameObjectTracker.Count());
+
+        miceTracker.GUIDescribe();
         //GUILayout.Label("Screen pixels: " + cam.pixelWidth + ":" + cam.pixelHeight);
         //GUILayout.Label("Mouse position: " + mousePos);
         //GUILayout.Label("World position: " + point.ToString("F3"));
@@ -299,6 +302,7 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     // called when the game is hosting, contains state updates sent from a guest
     public void OnStateFluxGuestInputChanged(GuestInputChangedMessage message)
     {
+        DebugLog($"OnGuestInputChangedMessage");
         string guestMouseId = message.Guest.ToString();
         miceTracker.Track(guestMouseId, message.Payload.mPos);
 
@@ -359,7 +363,6 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         Cursor.visible = true;
         gameObjectTracker.Stop();
         SceneManager.LoadScene("LobbyScene");
-
     }
 
     public void OnStateFluxChatSaid(ChatSaidMessage message)
@@ -406,18 +409,19 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
     
     public void OnStateFluxHostCommandChanged(HostCommandChangedMessage message)
     {
-        DebugLog(message.Payload.Params["foo"]);
+       // DebugLog(message.Payload.Params["foo"]);
     }
 
     public void OnStateFluxGuestCommandChanged(GuestCommandChangedMessage message)
     {
-        DebugLog(message.Payload.Params["bin"]);
+        //DebugLog(message.Payload.Params["bin"]);
     }
 
     // called when running as guest - host is telling us where to move everybody's mouse cursors
     public void OnStateFluxMiceChanged(MiceChangedMessage message)
     {
-        foreach(Mouse m in message.Payload.Items)
+        //DebugLog($"SetPlayerMouseDetails: " + JsonUtility.ToJson(message));
+        foreach (Mouse m in message.Payload.Items)
         {
             SetPlayerMouseDetails(m);
         }

@@ -230,6 +230,7 @@ namespace StateFlux.Service
                         Host = Server.Instance.LookupInstance(currentPlayer.GameInstanceRef.Id).HostPlayer
                     };
                     Broadcast(gameInstanceStoppedMessage, null, false);
+                    LogMessage($"Broadcasting GameInstanceStopped for game instance {currentPlayer.GameInstanceRef.GameName}:{currentPlayer.GameInstanceRef.Name}");
                 }
 
                 Server.Instance.RemoveGameInstance(currentPlayer);

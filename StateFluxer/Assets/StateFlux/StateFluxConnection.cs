@@ -320,12 +320,12 @@ namespace StateFlux.Client
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.HostCommandChanged)
                 {
-                    Debug.Log($"Receiving HostCommandChanged: {msgTxt}");
+                    //Debug.Log($"Receiving HostCommandChanged: {msgTxt}");
                     mappedMessage = JsonConvert.DeserializeObject<HostCommandChangedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.GuestCommandChanged)
                 {
-                    Debug.Log($"Receiving GuestCommandChanged: {msgTxt}");
+                    //Debug.Log($"Receiving GuestCommandChanged: {msgTxt}");
                     mappedMessage = JsonConvert.DeserializeObject<GuestCommandChangedMessage>(msgTxt);
                 }
                 else if (responseMessage.MessageType == MessageTypeNames.MiceChanged)

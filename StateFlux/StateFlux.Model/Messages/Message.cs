@@ -203,6 +203,8 @@ namespace StateFlux.Model
 
         public string GameName;
         public string InstanceName;
+        public int MaxPlayers;
+        public int MinPlayers;
     }
 
     public class GameInstanceCreatedMessage : Message

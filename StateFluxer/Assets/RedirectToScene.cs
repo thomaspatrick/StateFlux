@@ -7,6 +7,7 @@ public class RedirectToScene : MonoBehaviour
 
     void Awake()
     {
-        SceneManager.LoadScene("LobbyScene",LoadSceneMode.Additive);
+        //SceneManager.LoadScene("LobbyScene",LoadSceneMode.Additive);
+        SceneManager.LoadScene("LobbyScene");
     }
 }

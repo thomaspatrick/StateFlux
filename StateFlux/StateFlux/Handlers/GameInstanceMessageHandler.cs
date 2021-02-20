@@ -20,9 +20,18 @@ namespace StateFlux.Service.Handlers
             var game = _server.Games.FirstOrDefault(g => g.Name == message.GameName);
             if (game == null)
             {
-                string msg = $"Player tried to create game instance of game '{message.GameName}' but it does not exist!";
+                // add the game
+                game = new Game
+                {
+                    Name = message.GameName,
+                    MaxPlayers = message.MaxPlayers,
+                    MinPlayers = message.MinPlayers,
+                    Description = message.GameName,
+                };
+                Server.Instance.Games.Add(game);
+
+                string msg = $"Adding new game '{message.GameName}'.";
                 _websocket.LogMessage(msg);
-                throw new Exception(msg);
             }
 
             if(game.Instances.Any(g => g.HostPlayer.Id == currentPlayer.Id))
@@ -40,7 +49,7 @@ namespace StateFlux.Service.Handlers
             }
 
             var gameInstance = Server.Instance.HostGameInstance(currentPlayer, game, message.InstanceName);
-            _websocket.LogMessage($"Player creates game instance of game '{message.GameName}' and calls it '{message.InstanceName}'");
+            _websocket.LogMessage($"Player creates game instance '{message.GameName}:{message.InstanceName}'");
 
             var broadcastMessage = new GameInstanceCreatedMessage()
             {

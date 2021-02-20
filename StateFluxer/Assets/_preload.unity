@@ -153,8 +153,8 @@ MonoBehaviour:
   userName: 
   connected: 0
   openWithIdentity: 0
-  endpoint: ws://play.pixelkingsoftware.com/Service
-  otherEndpoint: ws://localhost:8888/Service
+  endpoint: ws://localhost:8888/Service
+  otherEndpoint: ws://play.pixelkingsoftware.com/Service
   hasSavedSession: 0
   clientId: 
   sessionFile: 

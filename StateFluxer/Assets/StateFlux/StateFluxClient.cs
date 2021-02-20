@@ -78,12 +78,14 @@ public class StateFluxClient : MonoBehaviour
 
     public void AddListener(IStateFluxListener listener)
     {
-        listeners.Add(listener);
+        if(!listeners.Contains(listener))
+            listeners.Add(listener);
     }
 
     public void RemoveListener(IStateFluxListener listener)
     {
-        listeners.Remove(listener);
+        if (listeners.Contains(listener))
+            listeners.Remove(listener);
     }
 
     public void Initialize()

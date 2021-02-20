@@ -12,6 +12,6 @@ EditorBuildSettings:
     path: Assets/Lobby/LobbyScene.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
-    path: Assets/Game/PlaceholderGame.unity
-    guid: b93a7038c9eefb14c8c5b66d179b1423
+    path: Assets/Game/DemoGame.unity
+    guid: 51eceea99cd734a408c307891e56fe17
   m_configObjects: {}

@@ -21,6 +21,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     private void Awake()
     {
+        DebugLog("Lobby Awake");
 
         if (StateFluxClient.Instance == null)
         {
@@ -30,22 +31,21 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
         if (_instance != null && _instance != this)
         {
-            Destroy(this.gameObject);
+            StartCoroutine(Initialize());
+//            Destroy(this.gameObject);
         }
         else
         {
             _instance = this;
-            //DontDestroyOnLoad(this.gameObject);
+            DontDestroyOnLoad(this.gameObject);
             StartCoroutine(Initialize());
         }
     }
+   
     // --- -------- ---
 
     public GameObject playerRowPrefab;
     public GameObject gameRowPrefab;
-    public GameObject login;
-    public GameObject lobby;
-    public GameObject connection;
 
     [HideInInspector]
     public bool Initialized;
@@ -53,12 +53,16 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     private List<GameInstance> _games;
     private List<ChatSaidMessage> _said;
     private string _lastUsernameSaveFile;
+    private GameObject _login;
+    private GameObject _lobby;
+    private GameObject _connection;
     private GameObject _userNameInputField;
     private GameObject _userNameInputText;
     private GameObject _userNameInputPlaceholder;
     private GameObject _chatField;
     private GameObject _chatScrollView;
     private GameObject _newGamePanel;
+    private GameObject _creatingGamePanel;
     private GameObject _errorPanel;
     private GameObject _modalBackgroundPanel;
     private GameObject _debugPanel;
@@ -112,7 +116,8 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         FindGameObjects();
         SceneManager.activeSceneChanged += ChangedActiveScene;
 
-        StateFluxClient.Instance.AddListener(this);
+        StateFluxClient client = StateFluxClient.Instance;
+        client.AddListener(this);
         StateFluxClient.Instance.Initialize();
 
         StartCoroutine(StateFluxClient.Instance.hasSavedSession ? ActivateLobbyPanel() : ActivateLoginPanel());
@@ -121,17 +126,51 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     private void ChangedActiveScene(Scene current, Scene next)
     {
-        DebugLog($"Changed scene from {current.name} to {next.name}");
+        //DebugLog($"Changed scene to {next.name}");
+
+        //GameObject gameCam = GameObject.Find("Game Camera");
+        //GameObject lobbyCam = GameObject.Find("Lobby Camera");
+
+        //if (next.name == "LobbyScene")
+        //{
+        //    gameCam?.SetActive(false);
+        //    lobbyCam?.SetActive(true);
+        //    Initialize();
+        //    ShowPanel(_lobby, null, true);
+        //}
+        //if (next.name == "DemoGame")
+        //{
+        //    gameCam?.SetActive(true);
+        //    lobbyCam?.SetActive(false);
+        //}
+
+        //DebugLog($"Changed scene from {current.name} to {next.name}");
+    }
+
+    public void OnSceneAwake()
+    {
+        DebugLog("OnSceneAwake");
+        GameObject gameCam = GameObject.Find("Game Camera");
+        GameObject lobbyCam = GameObject.Find("Lobby Camera");
+
+        gameCam?.SetActive(false);
+        lobbyCam?.SetActive(true);
+        Initialize();
+        ShowPanel(_lobby, null, true);
     }
 
     private void FindGameObjects()
     {
+        _login = GameObject.Find("Login Panel");
+        _lobby = GameObject.Find("Lobby Panel");
+        _connection = GameObject.Find("ConnectionPanel");
         _userNameInputField = GameObject.Find("InputField");
         _userNameInputText = GameObject.Find("InputField/Text");
         _userNameInputPlaceholder = GameObject.Find("InputField/Placeholder");
         _chatScrollView = GameObject.Find("Chat/Scroll View");
         _chatField = GameObject.Find("Content/Text");
         _newGamePanel = GameObject.Find("New Game Panel");
+        _creatingGamePanel = GameObject.Find("Creating Game Panel");
         _errorPanel = GameObject.Find("ErrorPanel");
         _modalBackgroundPanel = GameObject.Find("ModalBackdrop");
         _joinGamePanel = GameObject.Find("Join Game Panel");
@@ -164,36 +203,30 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     IEnumerator ActivateConnectionPanel()
     {
         yield return null;
-        ShowPanel(connection, _modalBackgroundPanel, true);
+        ShowPanel(_connection, _modalBackgroundPanel, true);
     }
 
     IEnumerator HideConnectionPanel()
     {
         yield return null;
-        ShowPanel(connection, _modalBackgroundPanel, false);
+        ShowPanel(_connection, _modalBackgroundPanel, false);
     }
 
     IEnumerator ActivateLobbyPanel()
     {
         yield return null;
-        ShowPanel(lobby, _modalBackgroundPanel, true);
-        ShowPanel(login, _modalBackgroundPanel, false);
+        ShowPanel(_lobby, _modalBackgroundPanel, true);
+        ShowPanel(_login, _modalBackgroundPanel, false);
     }
 
     IEnumerator ActivateLoginPanel()
     {
         yield return null;
-        ShowPanel(lobby, _modalBackgroundPanel, false);
-        ShowPanel(connection, _modalBackgroundPanel, false);
-        ShowPanel(login, null, true);
+        ShowPanel(_lobby, _modalBackgroundPanel, false);
+        ShowPanel(_connection, _modalBackgroundPanel, false);
+        ShowPanel(_login, null, true);
         var field = _userNameInputField.GetComponent<InputField>();
         field.text = LastUsername;
-        //if (!string.IsNullOrEmpty(LastUsername)) field.text = LastUsername;
-        //else
-        //{
-        //    LastUsername = "NameError" + new System.Random().Next();
-        //    field.text = LastUsername;
-        //}
         EventSystem.current.SetSelectedGameObject(_userNameInputField);
         field.ActivateInputField();
     }
@@ -203,7 +236,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         //DebugLog($"{(show ? "Showing" : "Hiding")} panel {obj.name}");
         _currentShowingPanel = show ? obj : null;
 
-        var canvasGroup = obj.GetComponent<CanvasGroup>();
+        var canvasGroup = (obj != null) ? obj.GetComponent<CanvasGroup>() : null;
         if(canvasGroup != null)
         {
             canvasGroup.alpha = show ? 1 : 0;
@@ -213,7 +246,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         
         if(backdrop != null)
         {
-            canvasGroup = backdrop.GetComponent<CanvasGroup>();
+            canvasGroup = (backdrop != null) ? backdrop.GetComponent<CanvasGroup>() : null;
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = show ? 1 : 0;
@@ -269,12 +302,14 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnClickConfirmCreateGame()
     {
         ShowPanel(_newGamePanel, _modalBackgroundPanel, false);
+        ShowPanel(_creatingGamePanel, _modalBackgroundPanel, true);
         InputField inputField = _newGamePanel.GetComponentInChildren<InputField>();
         var message = new CreateGameInstanceMessage
         {
-            GameName = "AssetCollapse",
-            InstanceName = inputField.text
-            
+            GameName = "Stellendency",
+            InstanceName = inputField.text,
+            MaxPlayers = 3,
+            MinPlayers = 2
         };
         StateFluxClient.Instance.SendRequest(message);
     }
@@ -337,6 +372,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxConnect()
     {
         DebugLog("OnStateFluxConnect!");
+
         StartCoroutine(ActivateLobbyPanel());
         StartCoroutine(HideConnectionPanel());
         StateFluxClient.Instance.SendRequest(new PlayerListMessage());
@@ -407,13 +443,18 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxGameInstanceListing(GameInstanceListingMessage message)
     {
+        if(_hostingGame)
+        {
+            ShowPanel(_creatingGamePanel, _modalBackgroundPanel, false);
+        }
+
         ClearGameInstanceListView();
         if (_gamesPanelContent == null) return;
         foreach (GameInstance g in message.GameInstances)
         {
             bool first = true;
             StringBuilder builder = new StringBuilder();
-            builder.Append($"<b>{g.Name}</b>\t\t<i><size=-14>({g.State})</size></i>\n Players: ");
+            builder.Append($"<b>{g.Name}</b>({g.Game.Name})\t\t<i><size=-4>({g.State})</size></i>\n Players: ");
             foreach(Player p in g.Players)
             {
                 if (!first) builder.Append(",");
@@ -454,13 +495,15 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         {
             players[p.Id] = p;
         }
-        if (message.GameInstance.GameName == "AssetCollapse")
-            SceneManager.LoadScene("PlaceholderGame");
+        if (message.GameInstance.GameName == "Stellendency")
+        {
+            ShowPanel(GameObject.Find("Canvas"), null, false);
+            SceneManager.LoadScene("DemoGame");
+        }
         else
         {
-            // unknown game
+            DebugLog($"Started unknown game instance: {message.GameInstance.GameName}:{message.GameInstance.Name}");
         }
-        SceneManager.LoadScene("DemoTile");
     }
 
     public void OnClickGameInstance(string buttonName)
@@ -511,7 +554,9 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
         DebugLog($"OnStateFluxServerError - {message.Error}!");
 
         StartCoroutine(nameof(ActivateLoginPanel));
-        _errorPanel.SendMessage("OnStateFluxError", message.Error);
+
+        if(!message.Error.Contains("requires a user session"))
+            _errorPanel.SendMessage("OnStateFluxError", message.Error);
     }
 
     private void DebugLog(string msg)
@@ -527,6 +572,7 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnStateFluxGameInstanceStopped(GameInstanceStoppedMessage message)
     {
+        //  ShowPanel(GameObject.Find("Canvas"), null, true);
     }
 
     public void OnStateFluxHostCommandChanged(HostCommandChangedMessage message)

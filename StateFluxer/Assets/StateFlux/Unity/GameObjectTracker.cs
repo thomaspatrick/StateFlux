@@ -115,7 +115,7 @@ namespace StateFlux.Unity
             {
                 GameObject parent = GameObject.Find(change.ParentID);
                 obj.transform.parent = parent?.transform;
-                DebugLog($"Parented {change.ParentID}");
+                //DebugLog($"Parented {change.ParentID}");
             }
 
             string side = asHost ? "hostObject" : "guestObject";
