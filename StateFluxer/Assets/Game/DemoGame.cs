@@ -93,10 +93,7 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         thisPlayer = players[playerId];
         thatPlayer = players.Values.Where(p => p.Id != playerId).FirstOrDefault();
 
-        thisMouse = GameObject.Instantiate(mousePrefab);
-        SetObjectColor(thisMouse, thisPlayer.Color);
-        thatMouse = GameObject.Instantiate(mousePrefab);
-        SetObjectColor(thatMouse, thatPlayer.Color);
+        CreateMousePointerGameObjects();
 
         if (stateFluxClient.isHosting)
         {
@@ -417,10 +414,24 @@ public class DemoGame : MonoBehaviour, IStateFluxListener
         //DebugLog(message.Payload.Params["bin"]);
     }
 
+    private void CreateMousePointerGameObjects()
+    {
+        thisMouse = GameObject.Instantiate(mousePrefab);
+        SetObjectColor(thisMouse, thisPlayer.Color);
+        thatMouse = GameObject.Instantiate(mousePrefab);
+        SetObjectColor(thatMouse, thatPlayer.Color);
+    }
+
     // called when running as guest - host is telling us where to move everybody's mouse cursors
     public void OnStateFluxMiceChanged(MiceChangedMessage message)
     {
         //DebugLog($"SetPlayerMouseDetails: " + JsonUtility.ToJson(message));
+
+        if(thisMouse == null)
+        {
+            CreateMousePointerGameObjects();
+        }
+
         foreach (Mouse m in message.Payload.Items)
         {
             SetPlayerMouseDetails(m);

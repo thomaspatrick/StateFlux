@@ -303,7 +303,14 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         ShowPanel(_newGamePanel, _modalBackgroundPanel, false);
         ShowPanel(_creatingGamePanel, _modalBackgroundPanel, true);
-        InputField inputField = _newGamePanel.GetComponentInChildren<InputField>();
+        InputField inputField = _newGamePanel.GetComponentInChildren
+            GetComponentInChildren<InputField>();
+        if (inputField != null)
+        {
+            DebugLog("found input field");
+            inputField.Select();
+            inputField.ActivateInputField();
+        }
         var message = new CreateGameInstanceMessage
         {
             GameName = "Stellendency",
@@ -372,9 +379,14 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxConnect()
     {
         DebugLog("OnStateFluxConnect!");
+        StartCoroutine(OnStateFluxConnectCoroutine());
+    }
 
-        StartCoroutine(ActivateLobbyPanel());
-        StartCoroutine(HideConnectionPanel());
+    public IEnumerator OnStateFluxConnectCoroutine()
+    {
+        yield return new WaitForEndOfFrame();
+        yield return ActivateLobbyPanel();
+        yield return HideConnectionPanel();
         StateFluxClient.Instance.SendRequest(new PlayerListMessage());
         StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
     }

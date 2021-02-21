@@ -262,17 +262,17 @@ namespace StateFlux.Service
 
                 if(verbose)
                 {
-                    LogMessage($"OnMessage.Processing {message.MessageType} from {pname}");
+                    LogMessage($"OnMessage {message.MessageType} from {pname}");
                 }
                 Message responseMessage = (Message)method.Invoke(handler, new object[] { message });
                 if(responseMessage != null)
                 {
                     Respond(responseMessage);
                 }
-                if(verbose)
-                {
-                    LogMessage($"OnMessage.Processed {message.MessageType} from {pname}");
-                }
+                //if(verbose)
+                //{
+                //    LogMessage($"OnMessage {message.MessageType} from {pname}");
+                //}
             }
             catch (Exception exception)
             {

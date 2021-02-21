@@ -76,17 +76,26 @@ namespace StateFlux.Service
             }
         }
 
-        public GameInstance RemoveGameInstance(Player hostPlayer)
+        public GameInstance RemoveGameInstance(Player player)
         {
             bool removed = false;
 
             foreach(var game in Games)
             {
-                GameInstance found = game.Instances.FirstOrDefault(i=>i.HostPlayer==hostPlayer);
-                removed = game.Instances.Remove(found);
+                foreach(var instance in game.Instances)
+                {
+                    if(instance.Players.Any(p => p.Id == player.Id))
+                    {
+                        foreach(var p in instance.Players)
+                        {
+                            p.GameInstanceRef = null;
+                            playerRepository.UpdatePlayer(p);
+                        }
+                        removed = game.Instances.Remove(instance);
+                        break;
+                    }
+                }
             }
-            hostPlayer.GameInstanceRef = null;
-            playerRepository.UpdatePlayer(hostPlayer);
             return null;
         }
 
