@@ -297,14 +297,20 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnClickToCreateGame()
     {
         ShowPanel(_newGamePanel, _modalBackgroundPanel, true);
+        InputField inputField = _newGamePanel.GetComponentInChildren<InputField>();
+        if (inputField != null)
+        {
+            DebugLog("found input field");
+            inputField.Select();
+            inputField.ActivateInputField();
+        }
     }
 
     public void OnClickConfirmCreateGame()
     {
         ShowPanel(_newGamePanel, _modalBackgroundPanel, false);
         ShowPanel(_creatingGamePanel, _modalBackgroundPanel, true);
-        InputField inputField = _newGamePanel.GetComponentInChildren
-            GetComponentInChildren<InputField>();
+        InputField inputField = _newGamePanel.GetComponentInChildren<InputField>();
         if (inputField != null)
         {
             DebugLog("found input field");
@@ -451,6 +457,11 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     public void OnStateFluxGameInstanceLeft(GameInstanceLeftMessage message)
     {
         DebugLog($"Player {message.Player.Name} left {message.GameName}:{message.InstanceName}");
+        if(message.Player.Name == LastUsername)
+        {
+            // we are no longer hosting a game, because we left it
+            _hostingGame = false;
+        }
     }
 
     public void OnStateFluxGameInstanceListing(GameInstanceListingMessage message)
@@ -522,13 +533,14 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
     {
         GameObject panel = _hostingGame ? _leaveGamePanel : _joinGamePanel;
         GameObject panelText = _hostingGame ? _leaveGamePanelText : _joinGamePanelText;
+        string action = _hostingGame ? "Leave" : "Join";
 
         string[] parts = buttonName.Split(new char[] { '.' });
         string gameInstanceId = parts[1];
         GameInstance gameInstance = _games.FirstOrDefault(g => g.Id.ToString() == gameInstanceId);
         ShowPanel(panel, null, true);
         var txt = panelText.GetComponent<Text>();
-        txt.text = $"Join {gameInstance.Name} hosted by {gameInstance.HostPlayer.Name}?";
+        txt.text = $"{action} {gameInstance.Name}?";
         _maybeJoinThisGameInstance = gameInstance;
     }
 
@@ -553,7 +565,11 @@ public class LobbyManager : MonoBehaviour, IStateFluxListener
 
     public void OnClickLeaveGame()
     {
+        DebugLog("OnClickLeaveGame");
         StateFluxClient.Instance.SendRequest(new LeaveGameInstanceMessage { GameName = _maybeJoinThisGameInstance.Game.Name, InstanceName = _maybeJoinThisGameInstance.Name });
+        StateFluxClient.Instance.SendRequest(new GameInstanceListMessage());
+        _hostingGame = false;
+
         OnClickDismissLeaveGame();
     }
     public void OnClickDismissLeaveGame()

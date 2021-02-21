@@ -68,12 +68,12 @@ namespace StateFlux.Service
             {
                 throw new Exception($"Player {player.Name} not in game instance {gameInstance.Game.Name}:{gameInstance.Name}");
             }
-            player.GameInstanceRef = null;
-            gameInstance.Players.Remove(player);
             if(playerHosting)
             {
-                gameInstance.Game.Instances.Remove(gameInstance);
+                RemoveGameInstance(player);
             }
+            player.GameInstanceRef = null;
+            gameInstance.Players.Remove(player);
         }
 
         public GameInstance RemoveGameInstance(Player player)
@@ -92,6 +92,7 @@ namespace StateFlux.Service
                             playerRepository.UpdatePlayer(p);
                         }
                         removed = game.Instances.Remove(instance);
+                        if(removed) LogMessage($"Removed game instance {instance.Id} ({instance.Game.Name}.{instance.Name})");
                         break;
                     }
                 }
@@ -139,7 +140,7 @@ namespace StateFlux.Service
 
                 BroadcastSystemMessage(playerListingMessage);
 
-                if (AnyGameInstances())
+                //if (AnyGameInstances())
                 {
                     var instances = new List<GameInstance>();
                     Games.ForEach(g => instances.AddRange(g.Instances));
